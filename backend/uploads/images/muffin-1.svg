@@ -1,0 +1,9 @@
+﻿<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#CD853F"/>
+  <text x="200" y="150" font-size="80" text-anchor="middle" dominant-baseline="middle" fill="black" font-family="Arial">
+    
+  </text>
+  <text x="200" y="220" font-size="24" text-anchor="middle" fill="white" font-family="Arial">
+    Muffins
+  </text>
+</svg>
