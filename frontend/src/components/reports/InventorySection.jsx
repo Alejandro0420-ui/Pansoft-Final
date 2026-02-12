@@ -10,13 +10,13 @@ export function InventorySection({ data = [] }) {
       key: "price",
       label: "Precio",
       width: "100px",
-      render: (value) => `COP $${parseFloat(value || 0).toFixed(2)}`,
+      render: (value) => `$${parseFloat(value || 0).toFixed(2)}`,
     },
     {
       key: "total_value",
       label: "Valor Total",
       width: "130px",
-      render: (value) => `COP $${parseFloat(value || 0).toFixed(2)}`,
+      render: (value) => `$${parseFloat(value || 0).toFixed(2)}`,
     },
   ];
 

@@ -70,7 +70,7 @@ export function InvoiceTable({
   };
 
   const formatCurrency = (amount) => {
-    return `COP $${Number(amount).toLocaleString("es-CO", {
+    return `$${Number(amount).toLocaleString("es-CO", {
       minimumFractionDigits: 0,
     })}`;
   };

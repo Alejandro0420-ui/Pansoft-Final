@@ -28,7 +28,7 @@ export function EditModal({
         stock: item.stock.toString(),
         min: item.min.toString(),
         max: item.max.toString(),
-        price: item.price.replace("COP $", "").replace("$", ""),
+        price: item.price.replace("$", ""),
         unit: item.unit,
         supplier: item.supplier || "",
       });

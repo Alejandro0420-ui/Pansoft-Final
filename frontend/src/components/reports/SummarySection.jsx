@@ -7,7 +7,7 @@ export function SummarySection({ summary = {} }) {
       <div className="col-md-3 mb-3">
         <StatCard
           title="Total Ventas"
-          value={`COP $${parseFloat(summary.total_sales || 0).toFixed(2)}`}
+          value={`$${parseFloat(summary.total_sales || 0).toFixed(2)}`}
           icon={TrendingUp}
           color="#4caf50"
           bgColor="rgba(76, 175, 80, 0.1)"

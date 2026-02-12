@@ -24,7 +24,7 @@ export function SalesOrdersSection({ data = [] }) {
     {
       key: "total_amount",
       label: "Total",
-      render: (value) => `COP $${parseFloat(value || 0).toFixed(2)}`,
+      render: (value) => `$${parseFloat(value || 0).toFixed(2)}`,
     },
     { key: "items_count", label: "Items", width: "80px" },
   ];

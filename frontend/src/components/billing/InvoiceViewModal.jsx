@@ -14,7 +14,7 @@ export function InvoiceViewModal({ show, onClose, invoice }) {
   };
 
   const formatCurrency = (amount) => {
-    return `COP $${Number(amount).toLocaleString("es-CO", {
+    return `$${Number(amount).toLocaleString("es-CO", {
       minimumFractionDigits: 0,
     })}`;
   };

@@ -66,7 +66,7 @@ export function ProductsGrid({ items, activeTab, onEdit, onDelete, getStatusBadg
 
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <span style={{ fontSize: "20px", fontWeight: "bold", color: "#EA7028" }}>
-                  COP ${(item.price || 0).toLocaleString("es-CO")}
+                  ${(item.price || 0).toLocaleString("es-CO")}
                 </span>
                 {getStatusBadge(item.stock_quantity, item.min_stock_level)}
               </div>

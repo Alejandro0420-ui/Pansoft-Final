@@ -7,8 +7,7 @@ export function InventoryStats({ data, type = "product" }) {
   ).length;
   const lowItems = data.filter((item) => item.status === "low").length;
   const totalValue = data.reduce((sum, item) => {
-    const priceStr = (item.price || "COP $0")
-      .replace("COP $", "")
+    const priceStr = (item.price || "$0")
       .replace("$", "")
       .replace(/\./g, "")
       .replace(",", ".");
@@ -48,7 +47,7 @@ export function InventoryStats({ data, type = "product" }) {
       <div className="col-md-3 mb-3">
         <StatCard
           label="Valor Total"
-          value={`COP $${totalValue.toLocaleString("es-CO", { minimumFractionDigits: 0 })}`}
+          value={`$${totalValue.toLocaleString("es-CO", { minimumFractionDigits: 0 })}`}
           icon={TrendingUp}
           color="#EBA94D"
         />

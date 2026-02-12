@@ -11,7 +11,7 @@ export function CustomersSection({ data = [] }) {
       key: "total_spent",
       label: "Total Gastado",
       width: "130px",
-      render: (value) => `COP $${parseFloat(value || 0).toFixed(2)}`,
+      render: (value) => `$${parseFloat(value || 0).toFixed(2)}`,
     },
   ];
 

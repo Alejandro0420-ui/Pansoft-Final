@@ -25,7 +25,7 @@ export function OrderFormModal({
     return salesItems.reduce((sum, item) => sum + (item.total || 0), 0);
   };
 
-  const formatCurrency = (amount) => `COP $${Number(amount).toLocaleString("es-CO")}`;
+  const formatCurrency = (amount) => `$${Number(amount).toLocaleString("es-CO")}`;
 
   return (
     <Modal
@@ -77,7 +77,7 @@ export function OrderFormModal({
                       { value: "", label: "Seleccionar..." },
                       ...Object.keys(PRODUCT_PRICES).map((p) => ({
                         value: p,
-                        label: `${p} - COP $${PRODUCT_PRICES[p].toLocaleString("es-CO")}`,
+                        label: `${p} - $${PRODUCT_PRICES[p].toLocaleString("es-CO")}`,
                       })),
                     ]}
                     value={newSalesItem.product || ""}
@@ -134,8 +134,8 @@ export function OrderFormModal({
                         <tr key={index}>
                           <td>{item.product}</td>
                           <td>{item.quantity}</td>
-                          <td>COP ${item.unitPrice.toLocaleString("es-CO")}</td>
-                          <td>COP ${item.total.toLocaleString("es-CO")}</td>
+                          <td>${item.unitPrice.toLocaleString("es-CO")}</td>
+                          <td>${item.total.toLocaleString("es-CO")}</td>
                           <td>
                             <button
                               className="btn btn-sm btn-outline-danger"
@@ -154,7 +154,7 @@ export function OrderFormModal({
                         </td>
                         <td colSpan="2">
                           <strong style={{ color: THEME_COLORS.primary }}>
-                            COP ${calculateSalesTotal().toLocaleString("es-CO")}
+                            ${calculateSalesTotal().toLocaleString("es-CO")}
                           </strong>
                         </td>
                       </tr>

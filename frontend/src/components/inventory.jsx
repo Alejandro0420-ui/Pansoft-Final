@@ -59,7 +59,7 @@ export function Inventory() {
           stock: p.stock_quantity,
           min: p.min_stock_level,
           max: p.max_stock_level || p.stock_quantity * 2,
-          price: `COP $${Number(p.price || 0).toLocaleString("es-CO", { minimumFractionDigits: 0 })}`,
+          price: `$${Number(p.price || 0).toLocaleString("es-CO", { minimumFractionDigits: 0 })}`,
           status: getStatus(p.stock_quantity, p.min_stock_level),
           unit: "unidades",
           disabled: false,
@@ -77,7 +77,7 @@ export function Inventory() {
         stock: s.stock_quantity,
         min: s.min_stock_level,
         max: s.max_stock_level || s.stock_quantity * 2,
-        price: `COP $${Number(s.price || 0).toLocaleString("es-CO", { minimumFractionDigits: 0 })}`,
+        price: `$${Number(s.price || 0).toLocaleString("es-CO", { minimumFractionDigits: 0 })}`,
         status: getStatus(s.stock_quantity, s.min_stock_level),
         unit: s.unit || "kg",
         supplier: s.supplier_id || "Por asignar",
@@ -388,9 +388,9 @@ export function Inventory() {
                 stock: newStock,
                 min: newMin,
                 max: parseInt(editForm.max) || selectedItem.max,
-                price: editForm.price.startsWith("COP $") || editForm.price.startsWith("$")
+                price: editForm.price.startsWith("$")
                   ? editForm.price
-                  : `COP $${editForm.price}`,
+                  : `$${editForm.price}`,
                 unit: editForm.unit,
                 supplier: editForm.supplier,
                 status: newStatus,
