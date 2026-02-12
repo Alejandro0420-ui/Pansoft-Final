@@ -1,9 +1,11 @@
 # ✅ Solución: Modal tapa el título - Z-Index Fix
 
 ## 🐛 Problema Identificado
+
 El modal que se abre al crear una nueva orden tapaba el título del modal y no se veía correctamente.
 
 ### Causa Raíz
+
 - El modal no tenía estilos de posicionamiento (`position: fixed`)
 - Faltaba `z-index` adecuado (< 1050)
 - En dispositivos móviles, el sidebar tenía `z-index: 1000`, ocultando el modal
@@ -12,10 +14,12 @@ El modal que se abre al crear una nueva orden tapaba el título del modal y no s
 
 ## ✅ Soluciones Aplicadas
 
-### 1. **Frontend - Modal.jsx** 
+### 1. **Frontend - Modal.jsx**
+
 **Archivo:** `frontend/src/components/common/Modal.jsx`
 
 **Cambios:**
+
 - ✅ Añadido `position: fixed` al contenedor del modal
 - ✅ Configurado `z-index: 1050` para el overlay
 - ✅ Configurado `z-index: 1051` para el diálogo
@@ -23,8 +27,9 @@ El modal que se abre al crear una nueva orden tapaba el título del modal y no s
 - ✅ Añadido `z-index: 1051` al modal-header
 
 **Estilos inline agregados:**
+
 ```javascript
-style={{ 
+style={{
   backgroundColor: "rgba(0,0,0,0.5)",
   position: "fixed",
   top: 0,
@@ -41,9 +46,11 @@ style={{
 ```
 
 ### 2. **Frontend - app.css**
+
 **Archivo:** `frontend/src/styles/app.css`
 
 **Cambios:**
+
 - ✅ Añadida clase `.modal` con `position: fixed !important`
 - ✅ Configurado `z-index: 1050` para `.modal`
 - ✅ Configurado `z-index: 1051` para `.modal-dialog`
@@ -53,6 +60,7 @@ style={{
 - ✅ Añadid clase `.modal.d-block` con `display: flex !important`
 
 **CSS agregado:**
+
 ```css
 /* Modal styles */
 .modal {
@@ -96,11 +104,11 @@ Modal title (visible)   → z-index: 1052
 
 ## 🎯 Cambios por Componente
 
-| Componente | Cambio | Impacto |
-|-----------|--------|--------|
-| `Modal.jsx` | Estilos inline + position: fixed | Modal visible en todas partes |
-| `app.css` | CSS de modal + z-index | Consistencia de estilos |
-| `OrderFormModal.jsx` | ❌ Sin cambios | Hereda los estilos del Modal |
+| Componente           | Cambio                           | Impacto                       |
+| -------------------- | -------------------------------- | ----------------------------- |
+| `Modal.jsx`          | Estilos inline + position: fixed | Modal visible en todas partes |
+| `app.css`            | CSS de modal + z-index           | Consistencia de estilos       |
+| `OrderFormModal.jsx` | ❌ Sin cambios                   | Hereda los estilos del Modal  |
 
 ---
 
@@ -117,6 +125,7 @@ Modal title (visible)   → z-index: 1052
 ## 🧪 Cómo Probar
 
 1. **Abre la aplicación**
+
    ```bash
    npm start  # en la carpeta frontend
    ```
@@ -124,6 +133,7 @@ Modal title (visible)   → z-index: 1052
 2. **Ve al módulo de Órdenes**
 
 3. **Crea una nueva orden**
+
    ```
    Botón "✓ Nueva Orden"
    ```

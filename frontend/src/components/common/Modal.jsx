@@ -14,7 +14,7 @@ export function Modal({
     <div
       className="modal d-block"
       onClick={onClose}
-      style={{ 
+      style={{
         backgroundColor: "rgba(0,0,0,0.5)",
         position: "fixed",
         top: 0,
@@ -26,21 +26,24 @@ export function Modal({
         alignItems: "center",
         justifyContent: "center",
         overflow: "auto",
-        padding: "1rem"
+        padding: "1rem",
       }}
     >
       <div
         className={`modal-dialog modal-${size}`}
         onClick={(e) => e.stopPropagation()}
-        style={{ 
+        style={{
           position: "relative",
           zIndex: 1051,
           maxWidth: size === "sm" ? "500px" : size === "lg" ? "800px" : "600px",
-          margin: "auto"
+          margin: "auto",
         }}
       >
         <div className="modal-content">
-          <div className="modal-header" style={{ position: "relative", zIndex: 1051 }}>
+          <div
+            className="modal-header"
+            style={{ position: "relative", zIndex: 1051 }}
+          >
             <h5 className="modal-title">{title}</h5>
             <button
               type="button"
