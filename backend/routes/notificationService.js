@@ -208,7 +208,7 @@ export async function createNotification(pool, notification, userId = null) {
         notification.icon || null,
         notification.color || null,
         userId,
-      ]
+      ],
     );
     console.log("✓ Notificación creada:", notification.title);
   } catch (error) {
@@ -236,22 +236,20 @@ export async function checkOverdueInvoices(pool) {
       // Verificar si ya existe notificación para esta factura
       const [existing] = await pool.query(
         "SELECT id FROM notifications WHERE type = 'warning' AND message LIKE ? LIMIT 1",
-        [`%${invoice.invoice_number}%`]
+        [`%${invoice.invoice_number}%`],
       );
 
       if (existing.length === 0) {
         const notification = notificationService.overdueBilling(
           invoice.invoice_number,
           invoice.days_overdue,
-          invoice.total_amount
+          invoice.total_amount,
         );
         await createNotification(pool, notification);
       }
     }
 
-    console.log(
-      `✓ Verificadas ${overdueInvoices.length} facturas vencidas`
-    );
+    console.log(`✓ Verificadas ${overdueInvoices.length} facturas vencidas`);
   } catch (error) {
     console.error("Error en checkOverdueInvoices:", error);
   }
@@ -263,7 +261,8 @@ export async function checkOverdueInvoices(pool) {
 export async function checkUpcomingDueDates(pool, daysWarning = 3) {
   try {
     // Obtener facturas próximas a vencer
-    const [upcomingInvoices] = await pool.query(`
+    const [upcomingInvoices] = await pool.query(
+      `
       SELECT i.id, i.invoice_number, i.due_date, i.total_amount,
              DATEDIFF(i.due_date, NOW()) as days_until_due
       FROM invoices i
@@ -272,27 +271,29 @@ export async function checkUpcomingDueDates(pool, daysWarning = 3) {
       AND i.status != 'paid'
       AND i.status != 'cancelled'
       ORDER BY i.due_date ASC
-    `, [daysWarning]);
+    `,
+      [daysWarning],
+    );
 
     for (const invoice of upcomingInvoices) {
       // Verificar si ya existe notificación para esta factura
       const [existing] = await pool.query(
         "SELECT id FROM notifications WHERE type = 'info' AND message LIKE ? LIMIT 1",
-        [`%próxima%${invoice.invoice_number}%`]
+        [`%próxima%${invoice.invoice_number}%`],
       );
 
       if (existing.length === 0) {
         const notification = notificationService.billingDueSoon(
           invoice.invoice_number,
           invoice.days_until_due,
-          invoice.total_amount
+          invoice.total_amount,
         );
         await createNotification(pool, notification);
       }
     }
 
     console.log(
-      `✓ Verificadas ${upcomingInvoices.length} facturas próximas a vencer`
+      `✓ Verificadas ${upcomingInvoices.length} facturas próximas a vencer`,
     );
   } catch (error) {
     console.error("Error en checkUpcomingDueDates:", error);
@@ -318,25 +319,25 @@ export async function checkCriticalStock(pool) {
 
     for (const product of criticalProducts) {
       const currentQuantity = product.quantity || 0;
-      
+
       // Verificar si ya existe notificación reciente para este producto
       const [existing] = await pool.query(
         "SELECT id FROM notifications WHERE type = 'warning' AND message LIKE ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 DAY) LIMIT 1",
-        [`%${product.name}%`]
+        [`%${product.name}%`],
       );
 
       if (existing.length === 0) {
         const notification = notificationService.criticalStock(
           product.name,
           currentQuantity,
-          product.min_stock_level
+          product.min_stock_level,
         );
         await createNotification(pool, notification);
       }
     }
 
     console.log(
-      `✓ Verificados ${criticalProducts.length} productos con stock crítico`
+      `✓ Verificados ${criticalProducts.length} productos con stock crítico`,
     );
   } catch (error) {
     console.error("Error en checkCriticalStock:", error);
@@ -362,25 +363,25 @@ export async function checkLowStockProducts(pool) {
 
     for (const product of lowStockProducts) {
       const currentQuantity = product.quantity || 0;
-      
+
       // Verificar si ya existe notificación reciente para este producto
       const [existing] = await pool.query(
         "SELECT id FROM notifications WHERE type = 'inventory' AND message LIKE ? AND created_at > DATE_SUB(NOW(), INTERVAL 6 HOUR) LIMIT 1",
-        [`%${product.name}%bajo%`]
+        [`%${product.name}%bajo%`],
       );
 
       if (existing.length === 0) {
         const notification = notificationService.lowStockProduct(
           product.name,
           currentQuantity,
-          product.min_stock_level
+          product.min_stock_level,
         );
         await createNotification(pool, notification);
       }
     }
 
     console.log(
-      `✓ Verificados ${lowStockProducts.length} productos con stock bajo`
+      `✓ Verificados ${lowStockProducts.length} productos con stock bajo`,
     );
   } catch (error) {
     console.error("Error en checkLowStockProducts:", error);
@@ -405,25 +406,25 @@ export async function checkLowStockSupplies(pool) {
 
     for (const supply of lowStockSupplies) {
       const currentQuantity = supply.current_quantity || 0;
-      
+
       // Verificar si ya existe notificación reciente para este insumo
       const [existing] = await pool.query(
         "SELECT id FROM notifications WHERE type = 'inventory' AND message LIKE ? AND created_at > DATE_SUB(NOW(), INTERVAL 6 HOUR) LIMIT 1",
-        [`%${supply.name}%bajo%`]
+        [`%${supply.name}%bajo%`],
       );
 
       if (existing.length === 0) {
         const notification = notificationService.lowStockSupply(
           supply.name,
           currentQuantity,
-          supply.min_stock_level
+          supply.min_stock_level,
         );
         await createNotification(pool, notification);
       }
     }
 
     console.log(
-      `✓ Verificados ${lowStockSupplies.length} insumos con stock bajo`
+      `✓ Verificados ${lowStockSupplies.length} insumos con stock bajo`,
     );
   } catch (error) {
     console.error("Error en checkLowStockSupplies:", error);

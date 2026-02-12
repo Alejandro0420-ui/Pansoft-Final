@@ -1,5 +1,10 @@
 import express from "express";
-import { createNotification, notificationService, checkOverdueInvoices, checkUpcomingDueDates } from "./notificationService.js";
+import {
+  createNotification,
+  notificationService,
+  checkOverdueInvoices,
+  checkUpcomingDueDates,
+} from "./notificationService.js";
 
 // Función para generar un número de factura único
 async function generateUniqueInvoiceNumber(pool) {
@@ -163,7 +168,10 @@ export default function billingRoutes(pool) {
     try {
       const { daysWarning = 3 } = req.body;
       await checkUpcomingDueDates(pool, daysWarning);
-      res.json({ success: true, message: "Facturas próximas a vencer verificadas" });
+      res.json({
+        success: true,
+        message: "Facturas próximas a vencer verificadas",
+      });
     } catch (error) {
       console.error("Error verificando facturas próximas:", error);
       res.status(500).json({ error: "Error al verificar facturas" });

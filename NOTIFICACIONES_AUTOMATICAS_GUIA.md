@@ -3,12 +3,14 @@
 ## 🎯 Notificaciones Implementadas
 
 ### 1. **Facturas Vencidas** 💳
+
 - **Cuándo**: Cuando una factura no pagada está vencida
 - **Frecuencia**: Cada hora (verificación automática)
 - **Acción desencadenante**: Creación de factura con fecha de vencimiento
 - **Endpoint manual**: `POST /api/billing/check/overdue`
 
 ### 2. **Facturas Próximas a Vencer** 📅
+
 - **Cuándo**: Cuando una factura vence en 3 días o menos
 - **Frecuencia**: Cada 12 horas (verificación automática)
 - **Acción desencadenante**: Creación de factura
@@ -16,24 +18,28 @@
 - **Parámetros**: `{ daysWarning: 3 }` (personalizable)
 
 ### 3. **Stock Crítico (Productos)** 🚨
+
 - **Cuándo**: Cuando un producto tiene menos del 30% del stock mínimo
 - **Frecuencia**: Cada 30 minutos (verificación automática)
 - **Acción desencadenante**: Actualización de inventario
 - **Endpoint manual**: `POST /api/inventory/check/critical-stock`
 
 ### 4. **Productos con Stock Bajo** 📦
+
 - **Cuándo**: Cuando un producto tiene entre 30% y 100% del stock mínimo
 - **Frecuencia**: Cada 45 minutos (verificación automática)
 - **Acción desencadenante**: Actualización de inventario
 - **Endpoint manual**: `POST /api/inventory/check/low-stock`
 
 ### 5. **Insumos con Stock Bajo** 📋
+
 - **Cuándo**: Cuando un insumo tiene entre 30% y 100% del stock mínimo
 - **Frecuencia**: Cada 45 minutos (verificación automática)
 - **Acción desencadenante**: Actualización de inventario
 - **Endpoint manual**: `POST /api/supplies/check/low-stock`
 
 ### 6. **Nueva Orden Creada** 📋
+
 - **Cuándo**: Inmediatamente después de crear una nueva orden
 - **Frecuencia**: Instantánea (en tiempo real)
 - **Acción desencadenante**: `POST /api/orders`
@@ -45,13 +51,13 @@
 
 El servidor ejecuta automáticamente las siguientes tareas al iniciar:
 
-| Tarea | Intervalo | Primera ejecución | Descripción |
-|-------|-----------|-------------------|-------------|
-| Facturas vencidas | 1 hora | 30 segundos | Busca facturas no pagadas vencidas |
-| Próximas a vencer | 12 horas | 1 minuto | Facturas próximas a vencer en 3 días |
-| Stock crítico | 30 minutos | 90 segundos | Productos con stock < 30% del mínimo |
-| Productos bajo stock | 45 minutos | 2 minutos | Productos con stock entre 30-100% del mínimo |
-| Insumos bajo stock | 45 minutos | 2.5 minutos | Insumos con stock entre 30-100% del mínimo |
+| Tarea                | Intervalo  | Primera ejecución | Descripción                                  |
+| -------------------- | ---------- | ----------------- | -------------------------------------------- |
+| Facturas vencidas    | 1 hora     | 30 segundos       | Busca facturas no pagadas vencidas           |
+| Próximas a vencer    | 12 horas   | 1 minuto          | Facturas próximas a vencer en 3 días         |
+| Stock crítico        | 30 minutos | 90 segundos       | Productos con stock < 30% del mínimo         |
+| Productos bajo stock | 45 minutos | 2 minutos         | Productos con stock entre 30-100% del mínimo |
+| Insumos bajo stock   | 45 minutos | 2.5 minutos       | Insumos con stock entre 30-100% del mínimo   |
 
 ---
 
@@ -60,11 +66,13 @@ El servidor ejecuta automáticamente las siguientes tareas al iniciar:
 Si necesitas ejecutar verificaciones manualmente:
 
 ### Verificar Facturas Vencidas
+
 ```bash
 POST /api/billing/check/overdue
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -73,6 +81,7 @@ POST /api/billing/check/overdue
 ```
 
 ### Verificar Próximas a Vencer
+
 ```bash
 POST /api/billing/check/upcoming
 Content-Type: application/json
@@ -83,6 +92,7 @@ Content-Type: application/json
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -91,11 +101,13 @@ Content-Type: application/json
 ```
 
 ### Verificar Stock Crítico (Productos)
+
 ```bash
 POST /api/inventory/check/critical-stock
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -104,11 +116,13 @@ POST /api/inventory/check/critical-stock
 ```
 
 ### Verificar Productos con Stock Bajo
+
 ```bash
 POST /api/inventory/check/low-stock
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -117,11 +131,13 @@ POST /api/inventory/check/low-stock
 ```
 
 ### Verificar Insumos con Stock Bajo
+
 ```bash
 POST /api/supplies/check/low-stock
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -134,6 +150,7 @@ POST /api/supplies/check/low-stock
 ## 📊 Tipos de Notificaciones (Logística)
 
 ### Facturas Vencidas
+
 ```javascript
 {
   type: "warning",
@@ -145,6 +162,7 @@ POST /api/supplies/check/low-stock
 ```
 
 ### Próximas a Vencer
+
 ```javascript
 {
   type: "info",
@@ -156,6 +174,7 @@ POST /api/supplies/check/low-stock
 ```
 
 ### Stock Crítico (Productos)
+
 ```javascript
 {
   type: "warning",
@@ -167,6 +186,7 @@ POST /api/supplies/check/low-stock
 ```
 
 ### Productos con Stock Bajo
+
 ```javascript
 {
   type: "inventory",
@@ -178,6 +198,7 @@ POST /api/supplies/check/low-stock
 ```
 
 ### Insumos con Stock Bajo
+
 ```javascript
 {
   type: "inventory",
@@ -189,6 +210,7 @@ POST /api/supplies/check/low-stock
 ```
 
 ### Nueva Orden
+
 ```javascript
 {
   type: "order",
@@ -204,6 +226,7 @@ POST /api/supplies/check/low-stock
 ## 🛠️ Flujo de Integración (Detrás de Escenas)
 
 ### Cuando se crea una orden:
+
 ```
 POST /api/orders
     ↓
@@ -215,6 +238,7 @@ POST /api/orders
 ```
 
 ### Cuando se ejecuta tarea de facturas vencidas:
+
 ```
 Tarea programada (cada hora)
     ↓
@@ -226,6 +250,7 @@ Tarea programada (cada hora)
 ```
 
 ### Cuando se verifica stock crítico:
+
 ```
 Tarea programada (cada 30 min)
     ↓
@@ -301,17 +326,20 @@ En `/components/notifications.jsx`:
 ## 🔧 Solución de Problemas
 
 ### No aparecen notificaciones
+
 1. Verificar que MySQL esté corriendo
 2. Verificar que la tabla `notifications` exista
 3. Verificar logs del servidor: `node backend/server.js`
 4. Ejecutar verificación manual: `POST /api/billing/check/overdue`
 
 ### Las tareas no se ejecutan
+
 1. Revisar que el servidor esté en `development` mode
 2. Verificar logs: buscar `🔔 [Tarea]`
 3. Verificar permiso de lectura en MySQL
 
 ### Stock crítico no se detecta
+
 1. Verificar que `min_stock_level` esté configurado en productos
 2. Verificar que el inventario actual sea < 30% del mínimo
 3. Ejecutar manual: `POST /api/inventory/check/critical-stock`

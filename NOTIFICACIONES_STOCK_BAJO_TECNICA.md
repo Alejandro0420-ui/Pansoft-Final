@@ -4,31 +4,34 @@
 
 El sistema de notificaciones ahora incluye tres niveles de alerta de inventario:
 
-| Nivel | Nombre | Código | Umbral | Color | Intervalo |
-|-------|--------|--------|--------|-------|-----------|
-| 1 | Stock Crítico | `critical-stock` | < 30% | 🔴 #FF6B6B | 30 min |
-| 2 | Stock Bajo | `low-stock` | 30-100% | 🟡 #FFD93D / #FFA500 | 45 min |
-| 3 | Stock Normal | - | > 100% | ✅ Verde | - |
+| Nivel | Nombre        | Código           | Umbral  | Color                | Intervalo |
+| ----- | ------------- | ---------------- | ------- | -------------------- | --------- |
+| 1     | Stock Crítico | `critical-stock` | < 30%   | 🔴 #FF6B6B           | 30 min    |
+| 2     | Stock Bajo    | `low-stock`      | 30-100% | 🟡 #FFD93D / #FFA500 | 45 min    |
+| 3     | Stock Normal  | -                | > 100%  | ✅ Verde             | -         |
 
 ---
 
 ## 📦 Notificaciones de Productos
 
 ### Tipos de Productos Soportados
+
 - Productos acabados (panadería, pastelería, etc.)
 - Ingredientes principales
 - Productos de venta
 
 ### Localización de Datos
+
 ```sql
 -- Tabla base
-SELECT p.id, p.name, p.min_stock_level, i.quantity 
+SELECT p.id, p.name, p.min_stock_level, i.quantity
 FROM products p
 LEFT JOIN inventory i ON p.id = i.product_id
 WHERE p.status = 'active'
 ```
 
 ### Estructura de Notificación
+
 ```javascript
 {
   type: "inventory",
@@ -41,6 +44,7 @@ WHERE p.status = 'active'
 ```
 
 ### Ejemplos de Productos Monitoreados
+
 - Pan Blanco: 150 unidades (mín: 100)
 - Productos Frescos: 30 unidades (mín: 50)
 - Galletas: 200 unidades (mín: 150)
@@ -50,19 +54,22 @@ WHERE p.status = 'active'
 ## 📋 Notificaciones de Insumos
 
 ### Tipos de Insumos Soportados
+
 - Materias primas (harina, levadura, sal)
 - Insumos empaquetados
 - Aditivos y mejorantes
 
 ### Localización de Datos
+
 ```sql
 -- Tabla base
-SELECT s.id, s.name, s.min_stock_level, s.current_quantity 
+SELECT s.id, s.name, s.min_stock_level, s.current_quantity
 FROM supplies s
 WHERE s.active = 1
 ```
 
 ### Estructura de Notificación
+
 ```javascript
 {
   type: "inventory",
@@ -75,6 +82,7 @@ WHERE s.active = 1
 ```
 
 ### Ejemplos de Insumos Monitoreados
+
 - Harina 0000: 500 kg (mín: 1000 kg)
 - Levadura Fresca: 20 unidades (mín: 30)
 - Sal Refinada: 50 kg (mín: 100 kg)
@@ -85,6 +93,7 @@ WHERE s.active = 1
 ## 🔄 Flujos de Detección
 
 ### Flujo 1: Actualización de Inventario
+
 ```
 PATCH /api/inventory/:id
     ↓
@@ -99,6 +108,7 @@ Crear notificación
 ```
 
 ### Flujo 2: Tarea Programada (45 min)
+
 ```
 checkLowStockProducts() ejecuta
     ↓
@@ -112,6 +122,7 @@ Registrar en logs
 ```
 
 ### Flujo 3: Tarea Programada (45 min)
+
 ```
 checkLowStockSupplies() ejecuta
     ↓
@@ -136,15 +147,15 @@ const currentQuantity = 45;
 
 const stockPercentage = (45 / 100) * 100; // 45%
 
-if (currentQuantity <= (minStockLevel * 0.3)) {
-    // CRÍTICO: < 30 unidades (< 30%)
-    notificación = "🚨 STOCK CRÍTICO"
+if (currentQuantity <= minStockLevel * 0.3) {
+  // CRÍTICO: < 30 unidades (< 30%)
+  notificación = "🚨 STOCK CRÍTICO";
 } else if (currentQuantity <= minStockLevel) {
-    // BAJO: 30 a 100 unidades (30-100%)
-    notificación = "🟡 STOCK BAJO"
+  // BAJO: 30 a 100 unidades (30-100%)
+  notificación = "🟡 STOCK BAJO";
 } else {
-    // NORMAL: > 100 unidades (> 100%)
-    notificación = "✅ STOCK NORMAL"
+  // NORMAL: > 100 unidades (> 100%)
+  notificación = "✅ STOCK NORMAL";
 }
 ```
 
@@ -153,16 +164,19 @@ if (currentQuantity <= (minStockLevel * 0.3)) {
 ## 🛠️ Configuración Recomendada
 
 ### Productos de Alto Movimiento
+
 - Mínimo sugerido: 100-200 unidades
 - Frecuencia de compra: 2-3 veces por semana
 - Umbral bajo stock: 50-100 unidades
 
 ### Productos de Medio Movimiento
+
 - Mínimo sugerido: 50-100 unidades
 - Frecuencia de compra: 1 vez por semana
 - Umbral bajo stock: 25-50 unidades
 
 ### Insumos Críticos (Levadura, Harina)
+
 - Mínimo sugerido: 50-100 bolsas/unidades
 - Frecuencia de compra: 2 veces por semana
 - Umbral bajo stock: 20-30 unidades
@@ -191,10 +205,11 @@ GET /api/notifications/by-type/inventory
 ## 🔍 Monitoreo en Frontend
 
 ### Vista de Notificaciones
+
 ```
 📦 Producto con stock bajo
    Pan Integral tiene solo 45 unidades (mínimo: 50)
-   
+
 📋 Insumo con stock bajo
    Levadura tiene solo 8 unidades (mínimo: 10)
 
@@ -203,6 +218,7 @@ GET /api/notifications/by-type/inventory
 ```
 
 ### Acciones Disponibles
+
 - ✅ Marcar como leída
 - ❌ Eliminar
 - 🔔 Ver todas las notificaciones
@@ -213,6 +229,7 @@ GET /api/notifications/by-type/inventory
 ## 📈 Estadísticas y Reportes
 
 ### Información Capturada por Notificación
+
 ```javascript
 {
   id: 42,
@@ -229,17 +246,17 @@ GET /api/notifications/by-type/inventory
 
 ```sql
 -- Productos en alerta
-SELECT COUNT(*) FROM notifications 
+SELECT COUNT(*) FROM notifications
 WHERE type = 'inventory' AND is_read = FALSE;
 
 -- Insumos con bajo stock
-SELECT * FROM notifications 
-WHERE type = 'inventory' 
-AND title LIKE '%Insumo%' 
+SELECT * FROM notifications
+WHERE type = 'inventory'
+AND title LIKE '%Insumo%'
 AND is_read = FALSE;
 
 -- Historial de 24 horas
-SELECT * FROM notifications 
+SELECT * FROM notifications
 WHERE created_at > DATE_SUB(NOW(), INTERVAL 1 DAY)
 ORDER BY created_at DESC;
 ```
@@ -249,6 +266,7 @@ ORDER BY created_at DESC;
 ## ⚙️ Configuración de Intervalos
 
 ### Intervalos Actuales
+
 - **7:001 Stock Crítico**: Cada 30 minutos (1,800,000 ms)
 - **Bajo Stock (Productos)**: Cada 45 minutos (2,700,000 ms)
 - **Bajo Stock (Insumos)**: Cada 45 minutos (2,700,000 ms)
@@ -265,6 +283,7 @@ setInterval(() => {
 ```
 
 **Conversión de Tiempos:**
+
 - 5 minutos = 300,000 ms
 - 15 minutos = 900,000 ms
 - 30 minutos = 1,800,000 ms
@@ -276,6 +295,7 @@ setInterval(() => {
 ## 📝 Registros en Logs
 
 El servidor mostrará:
+
 ```
 🔔 [Tarea] Verificando productos con stock bajo...
 ✓ Verificados 7 productos con stock bajo

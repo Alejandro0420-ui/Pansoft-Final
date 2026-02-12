@@ -1,5 +1,8 @@
 import express from "express";
-import { createNotification, notificationService } from "./notificationService.js";
+import {
+  createNotification,
+  notificationService,
+} from "./notificationService.js";
 
 export default function ordersRoutes(pool) {
   const router = express.Router();
@@ -67,7 +70,7 @@ export default function ordersRoutes(pool) {
       try {
         const [customer] = await pool.query(
           "SELECT name FROM customers WHERE id = ?",
-          [customer_id]
+          [customer_id],
         );
         const customerName = customer[0]?.name || "Cliente desconocido";
 
@@ -75,22 +78,20 @@ export default function ordersRoutes(pool) {
         const notification = notificationService.newOrder(
           orderId,
           customerName,
-          total_amount
+          total_amount,
         );
         await createNotification(pool, notification);
       } catch (notifError) {
         console.error("Error al crear notificación de orden:", notifError);
       }
 
-      res
-        .status(201)
-        .json({
-          id: orderId,
-          order_number,
-          customer_id,
-          delivery_date,
-          total_amount,
-        });
+      res.status(201).json({
+        id: orderId,
+        order_number,
+        customer_id,
+        delivery_date,
+        total_amount,
+      });
     } catch (error) {
       console.error("Error al crear orden:", error);
       res.status(500).json({ error: "Error al crear orden" });

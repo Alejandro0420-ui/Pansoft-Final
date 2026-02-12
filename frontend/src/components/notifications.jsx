@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Trash2, CheckCircle, AlertCircle, Info, Bell, AlertTriangle, ShoppingCart } from "lucide-react";
+import {
+  Trash2,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  Bell,
+  AlertTriangle,
+  ShoppingCart,
+} from "lucide-react";
 
 export function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -30,12 +38,16 @@ export function Notifications() {
     try {
       setLoading(true);
       const queryParam = filter === "unread" ? "?unreadOnly=true" : "";
-      const response = await fetch(`http://localhost:5000/api/notifications${queryParam}`);
+      const response = await fetch(
+        `http://localhost:5000/api/notifications${queryParam}`,
+      );
       const data = await response.json();
       setNotifications(data.notifications || []);
-      
+
       // Cargar conteo de no leídas
-      const countResponse = await fetch("http://localhost:5000/api/notifications/unread/count");
+      const countResponse = await fetch(
+        "http://localhost:5000/api/notifications/unread/count",
+      );
       const countData = await countResponse.json();
       setUnreadCount(countData.unreadCount || 0);
     } catch (error) {
@@ -111,13 +123,29 @@ export function Notifications() {
   };
 
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       {/* Header */}
-      <div style={{ flexShrink: 0, padding: "1rem", borderBottom: "1px solid #dee2e6" }}>
+      <div
+        style={{
+          flexShrink: 0,
+          padding: "1rem",
+          borderBottom: "1px solid #dee2e6",
+        }}
+      >
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div>
             <h3 className="mb-0">Notificaciones</h3>
-            {unreadCount > 0 && <small className="text-muted">{unreadCount} sin leer</small>}
+            {unreadCount > 0 && (
+              <small className="text-muted">{unreadCount} sin leer</small>
+            )}
           </div>
           <div className="btn-group" role="group">
             <button
@@ -138,12 +166,18 @@ export function Notifications() {
         {notifications.length > 0 && (
           <div className="d-flex gap-2">
             {unreadCount > 0 && (
-              <button className="btn btn-sm btn-outline-success" onClick={markAllAsRead}>
+              <button
+                className="btn btn-sm btn-outline-success"
+                onClick={markAllAsRead}
+              >
                 <CheckCircle size={16} className="me-1" />
                 Marcar todas como leída
               </button>
             )}
-            <button className="btn btn-sm btn-outline-danger" onClick={deleteAllRead}>
+            <button
+              className="btn btn-sm btn-outline-danger"
+              onClick={deleteAllRead}
+            >
               <Trash2 size={16} className="me-1" />
               Eliminar leídas
             </button>
@@ -152,7 +186,14 @@ export function Notifications() {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "1rem" }}>
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          padding: "1rem",
+        }}
+      >
         {loading ? (
           <div className="text-center py-5">
             <div className="spinner-border" role="status">
@@ -162,7 +203,9 @@ export function Notifications() {
         ) : notifications.length === 0 ? (
           <div className="alert alert-info">
             <Bell className="me-2" size={20} />
-            {filter === "unread" ? "No hay notificaciones sin leer" : "No hay notificaciones"}
+            {filter === "unread"
+              ? "No hay notificaciones sin leer"
+              : "No hay notificaciones"}
           </div>
         ) : (
           <div style={{ display: "grid", gap: "1rem" }}>
@@ -182,7 +225,13 @@ export function Notifications() {
                     backgroundColor: isUnread ? "rgba(0,0,0,0.02)" : "#fff",
                   }}
                 >
-                  <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "1rem",
+                      alignItems: "flex-start",
+                    }}
+                  >
                     <div
                       style={{
                         width: "40px",
@@ -200,7 +249,14 @@ export function Notifications() {
                     </div>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "0.5rem",
+                          alignItems: "center",
+                          marginBottom: "0.5rem",
+                        }}
+                      >
                         <h6 style={{ margin: 0 }}>{notification.title}</h6>
                         {isUnread && (
                           <span
@@ -216,20 +272,31 @@ export function Notifications() {
                           </span>
                         )}
                       </div>
-                      <p style={{ margin: "0.5rem 0", color: "#666", fontSize: "0.95rem" }}>
+                      <p
+                        style={{
+                          margin: "0.5rem 0",
+                          color: "#666",
+                          fontSize: "0.95rem",
+                        }}
+                      >
                         {notification.message}
                       </p>
                       <small style={{ color: "#999" }}>
-                        {new Date(notification.created_at).toLocaleString("es-ES", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {new Date(notification.created_at).toLocaleString(
+                          "es-ES",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
                       </small>
                     </div>
 
-                    <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+                    <div
+                      style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}
+                    >
                       {isUnread && (
                         <button
                           className="btn btn-sm btn-outline-success"

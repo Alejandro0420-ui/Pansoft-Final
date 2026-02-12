@@ -40,7 +40,9 @@ function App() {
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/notifications/unread/count");
+        const response = await fetch(
+          "http://localhost:5000/api/notifications/unread/count",
+        );
         const data = await response.json();
         setUnreadCount(data.unreadCount || 0);
       } catch (error) {
@@ -169,11 +171,18 @@ function App() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-grow-1 d-flex flex-column" style={{ height: "100vh", maxHeight: "100vh", boxSizing: "border-box" }}>
+      <div
+        className="flex-grow-1 d-flex flex-column"
+        style={{ height: "100vh", maxHeight: "100vh", boxSizing: "border-box" }}
+      >
         {/* Header */}
         <header
           className="bg-white border-bottom p-3 d-flex justify-content-between align-items-center"
-          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.1)", minHeight: "70px", flexShrink: 0 }}
+          style={{
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            minHeight: "70px",
+            flexShrink: 0,
+          }}
         >
           <button
             className="btn btn-sm btn-light"
@@ -210,7 +219,12 @@ function App() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-grow-1 overflow-y-auto" style={{ flex: 1, boxSizing: "border-box" }}>{renderPage()}</main>
+        <main
+          className="flex-grow-1 overflow-y-auto"
+          style={{ flex: 1, boxSizing: "border-box" }}
+        >
+          {renderPage()}
+        </main>
       </div>
     </div>
   );
