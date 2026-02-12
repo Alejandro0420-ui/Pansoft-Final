@@ -100,10 +100,15 @@ export default function productionOrdersRoutes(pool) {
 
   // Create production order with insumos
   router.post("/", async (req, res) => {
+    console.log("📥 POST /production-orders - Full request body:", req.body);
+    console.log("📥 Request method:", req.method);
+    console.log("📥 Request headers:", req.headers);
+    
     const connection = await pool.getConnection();
     try {
       const {
         product_id,
+        product_name,
         quantity,
         responsible_employee_id,
         due_date,
@@ -111,17 +116,54 @@ export default function productionOrdersRoutes(pool) {
         insumos,
       } = req.body;
 
-      // Validación
-      if (!product_id || !quantity || !responsible_employee_id) {
+      console.log("📥 Destructured values:", {
+        product_id,
+        product_name,
+        quantity,
+        responsible_employee_id,
+        due_date,
+        notes,
+        insumos,
+      });
+
+      // Validación - aceptar product_id O product_name
+      if (!quantity || !responsible_employee_id) {
+        console.log("❌ Validation failed:", { 
+          quantity: `${quantity} (${typeof quantity})`, 
+          responsible_employee_id: `${responsible_employee_id} (${typeof responsible_employee_id})` 
+        });
         return res.status(400).json({ error: "Faltan campos requeridos" });
       }
 
+      let actualProductId = product_id;
+
+      // Si se proporciona product_name, buscar el ID en la tabla products
+      if (product_name && !product_id) {
+        const [products] = await connection.query(
+          `SELECT id FROM products WHERE name = ? LIMIT 1`,
+          [product_name],
+        );
+        
+        if (!products || products.length === 0) {
+          await connection.rollback();
+          return res.status(400).json({ error: `Producto "${product_name}" no encontrado` });
+        }
+        
+        actualProductId = products[0].id;
+        console.log(`✓ Producto "${product_name}" encontrado con ID: ${actualProductId}`);
+      }
+
+      if (!actualProductId) {
+        return res.status(400).json({ error: "Product ID o nombre del producto es requerido" });
+      }
+
       // Generar número de orden PROD-XXX
-      const [[{ maxNum }]] = await pool.query(`
+      const [results] = await pool.query(`
         SELECT COALESCE(MAX(CAST(SUBSTRING(order_number, 6) AS UNSIGNED)), 0) as maxNum
         FROM production_orders
         WHERE order_number LIKE 'PROD-%'
       `);
+      const maxNum = results[0]?.maxNum || 0;
       const orderNumber = `PROD-${String(maxNum + 1).padStart(3, "0")}`;
 
       // Iniciar transacción
@@ -133,7 +175,7 @@ export default function productionOrdersRoutes(pool) {
          VALUES (?, ?, ?, ?, ?, ?, 'pendiente')`,
         [
           orderNumber,
-          product_id,
+          actualProductId,
           quantity,
           responsible_employee_id,
           due_date,
@@ -182,17 +224,36 @@ export default function productionOrdersRoutes(pool) {
 
   // Update production order
   router.put("/:id", async (req, res) => {
+    const connection = await pool.getConnection();
     try {
       const { id } = req.params;
-      const { product_id, quantity, responsible_employee_id, due_date, notes } =
+      const { product_id, product_name, quantity, responsible_employee_id, due_date, notes } =
         req.body;
 
-      const [result] = await pool.query(
+      let actualProductId = product_id;
+
+      // Si se proporciona product_name, buscar el ID en la tabla products
+      if (product_name && !product_id) {
+        const [products] = await connection.query(
+          `SELECT id FROM products WHERE name = ? LIMIT 1`,
+          [product_name],
+        );
+        
+        if (!products || products.length === 0) {
+          await connection.release();
+          return res.status(400).json({ error: `Producto "${product_name}" no encontrado` });
+        }
+        
+        actualProductId = products[0].id;
+        console.log(`✓ Producto "${product_name}" encontrado con ID: ${actualProductId}`);
+      }
+
+      const [result] = await connection.query(
         `UPDATE production_orders 
          SET product_id = ?, quantity = ?, responsible_employee_id = ?, due_date = ?, notes = ?, updated_at = NOW()
          WHERE id = ?`,
         [
-          product_id,
+          actualProductId || product_id,
           quantity,
           responsible_employee_id,
           due_date,
@@ -201,12 +262,15 @@ export default function productionOrdersRoutes(pool) {
         ],
       );
 
+      await connection.release();
+
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: "Orden no encontrada" });
       }
 
       res.json({ message: "Orden actualizada exitosamente" });
     } catch (error) {
+      await connection.release();
       console.error("Error al actualizar orden:", error);
       res.status(500).json({ error: "Error al actualizar orden" });
     }
@@ -230,18 +294,20 @@ export default function productionOrdersRoutes(pool) {
       }
 
       // Obtener la orden actual para saber el producto y cantidad
-      const [[order]] = await connection.query(
+      const [orders] = await connection.query(
         `SELECT id, product_id, quantity, status as current_status FROM production_orders WHERE id = ?`,
         [id],
       );
 
-      if (!order) {
+      if (!orders || orders.length === 0) {
         await connection.release();
         return res.status(404).json({ error: "Orden no encontrada" });
       }
 
+      const order = orders[0];
+
       // Iniciar transacción
-      await connection.query("START TRANSACTION");
+      await connection.beginTransaction();
 
       try {
         // Actualizar el estado de la orden
@@ -257,11 +323,12 @@ export default function productionOrdersRoutes(pool) {
           );
 
           // Obtener inventario actual
-          const [[currentInventory]] = await connection.query(
+          const [inventories] = await connection.query(
             `SELECT * FROM inventory WHERE product_id = ?`,
             [order.product_id],
           );
 
+          const currentInventory = inventories.length > 0 ? inventories[0] : null;
           const previousQuantity = currentInventory ? currentInventory.quantity : 0;
           const newQuantity = previousQuantity + order.quantity;
 
@@ -310,12 +377,12 @@ export default function productionOrdersRoutes(pool) {
             `,
               [
                 order.product_id,
-                "produccion",
+                "entrada",
                 order.quantity,
                 previousQuantity,
                 newQuantity,
                 `Orden de producción #${id} completada`,
-                `Orden de producción finalizada automáticamente`,
+                `Orden de producción finalizada - Entrada de inventario por producción completada`,
               ],
             );
             console.log(
@@ -330,9 +397,9 @@ export default function productionOrdersRoutes(pool) {
           }
         }
 
-        await connection.query("COMMIT");
+        await connection.commit();
       } catch (txError) {
-        await connection.query("ROLLBACK");
+        await connection.rollback();
         throw txError;
       }
 
@@ -342,12 +409,12 @@ export default function productionOrdersRoutes(pool) {
       });
     } catch (error) {
       try {
-        await connection.query("ROLLBACK");
+        await connection.rollback();
       } catch (e) {
         console.error("Error en rollback:", e);
       }
       console.error("Error al actualizar estado:", error);
-      res.status(500).json({ error: "Error al actualizar estado" });
+      res.status(500).json({ error: "Error al actualizar estado", details: error.message });
     } finally {
       try {
         await connection.release();
@@ -375,6 +442,74 @@ export default function productionOrdersRoutes(pool) {
     } catch (error) {
       console.error("Error al eliminar orden:", error);
       res.status(500).json({ error: "Error al eliminar orden" });
+    }
+  });
+
+  // Update a specific production order insumo
+  router.patch("/:id/insumos/:insumoId", async (req, res) => {
+    try {
+      const { id, insumoId } = req.params;
+      const { quantity_required, unit } = req.body;
+
+      if (!quantity_required || quantity_required <= 0) {
+        return res.status(400).json({ error: "La cantidad debe ser mayor a 0" });
+      }
+
+      // Verificar que el insumo pertenece a la orden
+      const [insumos] = await pool.query(
+        `SELECT * FROM production_order_insumos WHERE id = ? AND production_order_id = ?`,
+        [insumoId, id]
+      );
+
+      if (!insumos || insumos.length === 0) {
+        return res.status(404).json({ error: "Insumo no encontrado en esta orden" });
+      }
+
+      await pool.query(
+        `UPDATE production_order_insumos 
+         SET quantity_required = ?, unit = ?, updated_at = NOW()
+         WHERE id = ? AND production_order_id = ?`,
+        [quantity_required, unit || insumos[0].unit, insumoId, id]
+      );
+
+      res.json({
+        message: "Insumo actualizado exitosamente",
+        insumoId,
+        quantity_required,
+        unit: unit || insumos[0].unit
+      });
+    } catch (error) {
+      console.error("Error al actualizar insumo:", error);
+      res.status(500).json({ error: "Error al actualizar insumo", details: error.message });
+    }
+  });
+
+  // Delete a specific production order insumo
+  router.delete("/:id/insumos/:insumoId", async (req, res) => {
+    try {
+      const { id, insumoId } = req.params;
+
+      // Verificar que el insumo pertenece a la orden
+      const [insumos] = await pool.query(
+        `SELECT * FROM production_order_insumos WHERE id = ? AND production_order_id = ?`,
+        [insumoId, id]
+      );
+
+      if (!insumos || insumos.length === 0) {
+        return res.status(404).json({ error: "Insumo no encontrado en esta orden" });
+      }
+
+      await pool.query(
+        `DELETE FROM production_order_insumos WHERE id = ? AND production_order_id = ?`,
+        [insumoId, id]
+      );
+
+      res.json({
+        message: "Insumo eliminado exitosamente"
+      });
+    } catch (error) {
+      console.error("Error al eliminar insumo:", error);
+      res.status(500).json({ error: "Error al eliminar insumo", details: error.message });
     }
   });
 

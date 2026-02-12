@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Login } from "./components/login";
 import { Dashboard } from "./components/dashboard";
 import { Inventory } from "./components/inventory";
@@ -9,6 +9,7 @@ import { Orders } from "./components/orders";
 import { Billing } from "./components/billing";
 import { Employees } from "./components/employees";
 import { Settings } from "./components/settings";
+import { Notifications } from "./components/notifications";
 import {
   LayoutDashboard,
   Package,
@@ -33,6 +34,25 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Obtener conteo de notificaciones sin leer
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/notifications/unread/count");
+        const data = await response.json();
+        setUnreadCount(data.unreadCount || 0);
+      } catch (error) {
+        console.error("Error obteniendo conteo de notificaciones:", error);
+      }
+    };
+
+    fetchUnreadCount();
+    // Actualizar cada 10 segundos
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (!isLoggedIn) {
     return <Login onLogin={() => setIsLoggedIn(true)} />;
@@ -70,7 +90,7 @@ function App() {
       case "reports":
         return <Reports />;
       case "notifications":
-        return <NotificationsPlaceholder />;
+        return <Notifications />;
       case "settings":
         return <Settings />;
       default:
@@ -149,11 +169,11 @@ function App() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-grow-1 d-flex flex-column">
+      <div className="flex-grow-1 d-flex flex-column" style={{ height: "100vh", maxHeight: "100vh", boxSizing: "border-box" }}>
         {/* Header */}
         <header
           className="bg-white border-bottom p-3 d-flex justify-content-between align-items-center"
-          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}
+          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.1)", minHeight: "70px", flexShrink: 0 }}
         >
           <button
             className="btn btn-sm btn-light"
@@ -166,15 +186,19 @@ function App() {
           <div className="d-flex align-items-center gap-3">
             <button
               className="btn btn-light position-relative"
-              style={{ width: "40px", height: "40px" }}
+              onClick={() => setCurrentPage("notifications")}
+              style={{ width: "40px", height: "40px", cursor: "pointer" }}
+              title="Ver notificaciones"
             >
               <Bell size={20} />
-              <span
-                className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                style={{ fontSize: "10px" }}
-              >
-                3
-              </span>
+              {unreadCount > 0 && (
+                <span
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style={{ fontSize: "10px" }}
+                >
+                  {unreadCount}
+                </span>
+              )}
             </button>
             <img
               src="https://i.pravatar.cc/40?img=5"
@@ -186,17 +210,8 @@ function App() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-grow-1 overflow-y-auto p-4">{renderPage()}</main>
+        <main className="flex-grow-1 overflow-y-auto" style={{ flex: 1, boxSizing: "border-box" }}>{renderPage()}</main>
       </div>
-    </div>
-  );
-}
-
-function NotificationsPlaceholder() {
-  return (
-    <div className="p-4">
-      <h1>Notificaciones</h1>
-      <p className="text-muted">Aquí aparecerán tus notificaciones</p>
     </div>
   );
 }

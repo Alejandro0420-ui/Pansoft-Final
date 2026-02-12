@@ -1,4 +1,4 @@
-import { Edit2, CheckCircle, XCircle, Wheat } from "lucide-react";
+import { Edit2, CheckCircle, XCircle, Wheat, Eye } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import { THEME_COLORS } from "./constants";
 
@@ -6,6 +6,7 @@ export function ProductionOrdersTable({
   orders,
   loading,
   onEdit,
+  onViewDetails,
   onViewSupplies,
   onUpdateStatus,
 }) {
@@ -54,6 +55,14 @@ export function ProductionOrdersTable({
                 </td>
                 <td>
                   <div className="btn-group btn-group-sm">
+                    <button
+                      className="btn btn-outline-secondary"
+                      onClick={() => onViewDetails(order)}
+                      title="Ver detalles"
+                      disabled={loading}
+                    >
+                      <Eye size={14} />
+                    </button>
                     <button
                       className="btn btn-outline-secondary"
                       onClick={() => onViewSupplies(order)}

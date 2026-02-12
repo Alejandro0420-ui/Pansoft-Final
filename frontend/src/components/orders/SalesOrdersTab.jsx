@@ -98,11 +98,11 @@ export function SalesOrdersTab({
                     </td>
                     <td>
                       <div className="btn-group btn-group-sm" role="group">
-                        {order.status !== "completed" && (
+                        {order.status !== "completada" && (
                           <button
                             className="btn btn-outline-success"
                             onClick={() =>
-                              onStatusChange(order.id, "completed")
+                              onStatusChange(order.id, "completada")
                             }
                             title="Completar"
                           >

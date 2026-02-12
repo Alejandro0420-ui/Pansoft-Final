@@ -36,7 +36,7 @@ export const useOrdersLogic = () => {
         date: new Date(o.order_date).toISOString().split("T")[0],
         total: `$${Number(o.total_amount).toLocaleString("es-CO")}`,
         status: o.status,
-        items: 0,
+        items: o.item_count || 0,
         product: "Variado",
         supplies: [],
       }));

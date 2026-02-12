@@ -3,8 +3,8 @@ import { Calendar, ArrowDownCircle, ArrowUpCircle, Trash2 } from "lucide-react";
 export function MovementHistory({ movements, onClearHistory, isClearing }) {
   return (
     <div className="card mt-4">
-      <div 
-        className="card-header d-flex justify-content-between align-items-center" 
+      <div
+        className="card-header d-flex justify-content-between align-items-center"
         style={{ backgroundColor: "#EBB583" }}
       >
         <h5 className="mb-0" style={{ fontFamily: "Open Sans, sans-serif" }}>
@@ -83,13 +83,8 @@ export function MovementHistory({ movements, onClearHistory, isClearing }) {
                   <td>
                     {movement.type === "entrada" ? (
                       <div className="d-flex align-items-center gap-2">
-                        <ArrowDownCircle
-                          size={16}
-                          style={{ color: "green" }}
-                        />
-                        <span
-                          style={{ color: "green", fontFamily: "Roboto" }}
-                        >
+                        <ArrowDownCircle size={16} style={{ color: "green" }} />
+                        <span style={{ color: "green", fontFamily: "Roboto" }}>
                           Entrada
                         </span>
                       </div>

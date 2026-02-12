@@ -1,4 +1,5 @@
 import express from "express";
+import { createNotification, notificationService, checkOverdueInvoices, checkUpcomingDueDates } from "./notificationService.js";
 
 // Función para generar un número de factura único
 async function generateUniqueInvoiceNumber(pool) {
@@ -143,6 +144,29 @@ export default function billingRoutes(pool) {
     } catch (error) {
       console.error("Error al eliminar factura:", error);
       res.status(500).json({ error: "Error al eliminar factura" });
+    }
+  });
+
+  // Verificar facturas vencidas
+  router.post("/check/overdue", async (req, res) => {
+    try {
+      await checkOverdueInvoices(pool);
+      res.json({ success: true, message: "Facturas vencidas verificadas" });
+    } catch (error) {
+      console.error("Error verificando facturas vencidas:", error);
+      res.status(500).json({ error: "Error al verificar facturas" });
+    }
+  });
+
+  // Verificar facturas próximas a vencer
+  router.post("/check/upcoming", async (req, res) => {
+    try {
+      const { daysWarning = 3 } = req.body;
+      await checkUpcomingDueDates(pool, daysWarning);
+      res.json({ success: true, message: "Facturas próximas a vencer verificadas" });
+    } catch (error) {
+      console.error("Error verificando facturas próximas:", error);
+      res.status(500).json({ error: "Error al verificar facturas" });
     }
   });
 

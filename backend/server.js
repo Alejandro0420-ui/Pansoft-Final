@@ -69,6 +69,8 @@ import employeesRoutes from "./routes/employees.js";
 import reportsRoutes from "./routes/reports.js";
 import productionOrdersRoutes from "./routes/production-orders.js";
 import salesOrdersRoutes from "./routes/sales-orders.js";
+import notificationsRoutes from "./routes/notifications.js";
+import { checkOverdueInvoices, checkUpcomingDueDates, checkCriticalStock, checkLowStockProducts, checkLowStockSupplies } from "./routes/notificationService.js";
 
 // Register routes
 app.use("/api/auth", authRoutes(pool));
@@ -84,6 +86,7 @@ app.use("/api/employees", employeesRoutes(pool));
 app.use("/api/reports", reportsRoutes(pool));
 app.use("/api/production-orders", productionOrdersRoutes(pool));
 app.use("/api/sales-orders", salesOrdersRoutes(pool));
+app.use("/api/notifications", notificationsRoutes(pool));
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -161,6 +164,96 @@ async function startServer() {
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor Pansoft ejecutándose en puerto ${PORT}`);
+      
+      // ===== TAREAS PROGRAMADAS DE NOTIFICACIONES =====
+      console.log("⏰ Configurando tareas programadas de notificaciones...\n");
+      
+      // 1. Verificar facturas vencidas cada hora
+      console.log("  ✓ Verificación de facturas vencidas cada hora");
+      setInterval(() => {
+        console.log("🔔 [Tarea] Verificando facturas vencidas...");
+        checkOverdueInvoices(pool).catch(err => 
+          console.error("❌ Error en verificación de facturas vencidas:", err.message)
+        );
+      }, 3600000); // 1 hora
+      
+      // Ejecutar en los primeros 30 segundos
+      setTimeout(() => {
+        console.log("🔔 [Tarea] Verificación inicial de facturas vencidas");
+        checkOverdueInvoices(pool).catch(err => 
+          console.error("❌ Error:", err.message)
+        );
+      }, 30000);
+      
+      // 2. Verificar facturas próximas a vencer cada 12 horas
+      console.log("  ✓ Verificación de facturas próximas a vencer cada 12 horas");
+      setInterval(() => {
+        console.log("🔔 [Tarea] Verificando facturas próximas a vencer...");
+        checkUpcomingDueDates(pool, 3).catch(err => 
+          console.error("❌ Error en verificación de próximas facturas:", err.message)
+        );
+      }, 43200000); // 12 horas
+      
+      // Ejecutar en los primeros 60 segundos
+      setTimeout(() => {
+        console.log("🔔 [Tarea] Verificación inicial de próximas facturas");
+        checkUpcomingDueDates(pool, 3).catch(err => 
+          console.error("❌ Error:", err.message)
+        );
+      }, 60000);
+      
+      // 3. Verificar stock crítico cada 30 minutos
+      console.log("  ✓ Verificación de stock crítico cada 30 minutos");
+      setInterval(() => {
+        console.log("🔔 [Tarea] Verificando stock crítico...");
+        checkCriticalStock(pool).catch(err => 
+          console.error("❌ Error en verificación de stock crítico:", err.message)
+        );
+      }, 1800000); // 30 minutos
+      
+      // Ejecutar en los primeros 90 segundos
+      setTimeout(() => {
+        console.log("🔔 [Tarea] Verificación inicial de stock crítico");
+        checkCriticalStock(pool).catch(err => 
+          console.error("❌ Error:", err.message)
+        );
+      }, 90000);
+
+      // 4. Verificar productos con stock bajo cada 45 minutos
+      console.log("  ✓ Verificación de productos con stock bajo cada 45 minutos");
+      setInterval(() => {
+        console.log("🔔 [Tarea] Verificando productos con stock bajo...");
+        checkLowStockProducts(pool).catch(err => 
+          console.error("❌ Error en verificación de productos bajo stock:", err.message)
+        );
+      }, 2700000); // 45 minutos
+      
+      // Ejecutar en los primeros 120 segundos
+      setTimeout(() => {
+        console.log("🔔 [Tarea] Verificación inicial de productos con stock bajo");
+        checkLowStockProducts(pool).catch(err => 
+          console.error("❌ Error:", err.message)
+        );
+      }, 120000);
+
+      // 5. Verificar insumos con stock bajo cada 45 minutos
+      console.log("  ✓ Verificación de insumos con stock bajo cada 45 minutos");
+      setInterval(() => {
+        console.log("🔔 [Tarea] Verificando insumos con stock bajo...");
+        checkLowStockSupplies(pool).catch(err => 
+          console.error("❌ Error en verificación de insumos bajo stock:", err.message)
+        );
+      }, 2700000); // 45 minutos
+      
+      // Ejecutar en los primeros 150 segundos
+      setTimeout(() => {
+        console.log("🔔 [Tarea] Verificación inicial de insumos con stock bajo");
+        checkLowStockSupplies(pool).catch(err => 
+          console.error("❌ Error:", err.message)
+        );
+      }, 150000);
+      
+      console.log("\n✅ Tareas programadas configuradas correctamente\n");
     });
   } catch (error) {
     console.error("Error al iniciar servidor:", error);

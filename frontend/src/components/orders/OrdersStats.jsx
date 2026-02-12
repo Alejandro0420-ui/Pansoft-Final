@@ -3,7 +3,7 @@ import { ShoppingCart, Boxes, CheckCircle } from "lucide-react";
 
 export function OrdersStats({ salesOrders, productionOrders }) {
   const salesCompleted = salesOrders.filter(
-    (o) => o.status === "completed",
+    (o) => o.status === "completada",
   ).length;
   const prodCompleted = productionOrders.filter(
     (o) => o.status === "completada",

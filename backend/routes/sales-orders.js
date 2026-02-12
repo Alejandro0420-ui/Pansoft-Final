@@ -12,19 +12,22 @@ export default function salesOrdersRoutes(pool) {
 
       const [orders] = await pool.query(`
         SELECT 
-          id,
-          order_number,
-          customer_id,
-          customer_name,
-          order_date,
-          delivery_date,
-          total_amount,
-          status,
-          notes,
-          created_at,
-          updated_at
-        FROM sales_orders
-        ORDER BY order_date DESC
+          so.id,
+          so.order_number,
+          so.customer_id,
+          so.customer_name,
+          so.order_date,
+          so.delivery_date,
+          so.total_amount,
+          so.status,
+          so.notes,
+          so.created_at,
+          so.updated_at,
+          COALESCE(COUNT(soi.id), 0) as item_count
+        FROM sales_orders so
+        LEFT JOIN sales_order_items soi ON so.id = soi.sales_order_id
+        GROUP BY so.id, so.order_number, so.customer_id, so.customer_name, so.order_date, so.delivery_date, so.total_amount, so.status, so.notes, so.created_at, so.updated_at
+        ORDER BY so.order_date DESC
       `);
 
       console.log(`✓ Se obtuvieron ${orders.length} órdenes de venta`);
@@ -49,7 +52,7 @@ export default function salesOrdersRoutes(pool) {
     try {
       const { id } = req.params;
 
-      const [order] = await pool.query(
+      const [orders] = await pool.query(
         `
         SELECT 
           id,
@@ -68,6 +71,12 @@ export default function salesOrdersRoutes(pool) {
       `,
         [id],
       );
+
+      if (!orders || orders.length === 0) {
+        return res.status(404).json({ error: "Orden no encontrada" });
+      }
+
+      const order = orders[0];
 
       const [items] = await pool.query(
         `
@@ -93,7 +102,7 @@ export default function salesOrdersRoutes(pool) {
         [id],
       );
 
-      res.json({ ...order[0], items, supplies });
+      res.json({ ...order, items, supplies });
     } catch (error) {
       console.error("Error al obtener orden de venta:", error);
       res.status(500).json({ error: "Error al obtener orden de venta" });
@@ -311,11 +320,12 @@ export default function salesOrdersRoutes(pool) {
             );
 
             // Obtener inventario actual
-            const [[currentInventory]] = await connection.query(
+            const [inventories] = await connection.query(
               `SELECT * FROM inventory WHERE product_id = ?`,
               [item.product_id],
             );
 
+            const currentInventory = inventories.length > 0 ? inventories[0] : null;
             const previousQuantity = currentInventory
               ? currentInventory.quantity
               : 0;
@@ -432,6 +442,165 @@ export default function salesOrdersRoutes(pool) {
     } catch (error) {
       console.error("Error al eliminar orden:", error);
       res.status(500).json({ error: "Error al eliminar orden" });
+    }
+  });
+
+  // Update a specific sales order item
+  router.patch("/:id/items/:itemId", async (req, res) => {
+    try {
+      const { id, itemId } = req.params;
+      const { quantity, unit_price, total } = req.body;
+
+      console.log("📝 ACTUALIZANDO ITEM DE ORDEN DE VENTA", {
+        orderId: id,
+        itemId,
+        quantity,
+        unit_price,
+        total
+      });
+
+      if (!quantity || quantity <= 0) {
+        return res.status(400).json({ error: "La cantidad debe ser mayor a 0" });
+      }
+
+      // Verificar que el item pertenece a la orden
+      const [items] = await pool.query(
+        `SELECT * FROM sales_order_items WHERE id = ? AND sales_order_id = ?`,
+        [itemId, id]
+      );
+
+      console.log("📦 Items encontrados:", items);
+
+      if (!items || items.length === 0) {
+        return res.status(404).json({ error: "Item no encontrado en esta orden" });
+      }
+
+      const finalTotal = total || (quantity * unit_price);
+
+      console.log("💾 Ejecutando UPDATE:", {
+        quantity,
+        unit_price: unit_price || items[0].unit_price,
+        finalTotal,
+        itemId,
+        orderId: id
+      });
+
+      const updateResult = await pool.query(
+        `UPDATE sales_order_items 
+         SET quantity = ?, unit_price = ?, total = ?
+         WHERE id = ? AND sales_order_id = ?`,
+        [quantity, unit_price || items[0].unit_price, finalTotal, itemId, id]
+      );
+
+      console.log("✅ UPDATE resultado:", updateResult);
+
+      // Actualizar el total de la orden
+      const [totals] = await pool.query(
+        `SELECT SUM(total) as order_total FROM sales_order_items WHERE sales_order_id = ?`,
+        [id]
+      );
+
+      const newOrderTotal = totals[0]?.order_total || 0;
+
+      console.log("📊 Nuevo total de orden:", newOrderTotal);
+
+      await pool.query(
+        `UPDATE sales_orders SET total_amount = ?, updated_at = NOW() WHERE id = ?`,
+        [newOrderTotal, id]
+      );
+
+      res.json({
+        message: "Item actualizado exitosamente",
+        itemId,
+        quantity,
+        total: finalTotal,
+        orderTotal: newOrderTotal
+      });
+    } catch (error) {
+      console.error("Error al actualizar item:", error);
+      res.status(500).json({ error: "Error al actualizar item", details: error.message });
+    }
+  });
+
+  // Delete a specific sales order item
+  router.delete("/:id/items/:itemId", async (req, res) => {
+    try {
+      const { id, itemId } = req.params;
+
+      // Verificar que el item pertenece a la orden
+      const [items] = await pool.query(
+        `SELECT * FROM sales_order_items WHERE id = ? AND sales_order_id = ?`,
+        [itemId, id]
+      );
+
+      if (!items || items.length === 0) {
+        return res.status(404).json({ error: "Item no encontrado en esta orden" });
+      }
+
+      await pool.query(
+        `DELETE FROM sales_order_items WHERE id = ? AND sales_order_id = ?`,
+        [itemId, id]
+      );
+
+      // Actualizar el total de la orden
+      const [totals] = await pool.query(
+        `SELECT SUM(total) as order_total FROM sales_order_items WHERE sales_order_id = ?`,
+        [id]
+      );
+
+      const newOrderTotal = totals[0]?.order_total || 0;
+
+      await pool.query(
+        `UPDATE sales_orders SET total_amount = ?, updated_at = NOW() WHERE id = ?`,
+        [newOrderTotal, id]
+      );
+
+      res.json({
+        message: "Item eliminado exitosamente",
+        orderTotal: newOrderTotal
+      });
+    } catch (error) {
+      console.error("Error al eliminar item:", error);
+      res.status(500).json({ error: "Error al eliminar item", details: error.message });
+    }
+  });
+
+  // Update sales order supplies
+  router.patch("/:id/insumos/:insumoId", async (req, res) => {
+    try {
+      const { id, insumoId } = req.params;
+      const { quantity_required, unit } = req.body;
+
+      if (!quantity_required || quantity_required <= 0) {
+        return res.status(400).json({ error: "La cantidad debe ser mayor a 0" });
+      }
+
+      // Verificar que el insumo pertenece a la orden
+      const [insumos] = await pool.query(
+        `SELECT * FROM sales_order_insumos WHERE id = ? AND sales_order_id = ?`,
+        [insumoId, id]
+      );
+
+      if (!insumos || insumos.length === 0) {
+        return res.status(404).json({ error: "Insumo no encontrado en esta orden" });
+      }
+
+      await pool.query(
+        `UPDATE sales_order_insumos 
+         SET quantity_required = ?, unit = ?, updated_at = NOW()
+         WHERE id = ? AND sales_order_id = ?`,
+        [quantity_required, unit || insumos[0].unit, insumoId, id]
+      );
+
+      res.json({
+        message: "Insumo actualizado exitosamente",
+        insumoId,
+        quantity_required,
+        unit: unit || insumos[0].unit
+      });
+    } catch (error) {
+      console.error("Error al actualizar insumo:", error);
+      res.status(500).json({ error: "Error al actualizar insumo", details: error.message });
     }
   });
 

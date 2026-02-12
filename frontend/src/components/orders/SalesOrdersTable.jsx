@@ -1,4 +1,4 @@
-import { Edit2, CheckCircle, XCircle, Wheat } from "lucide-react";
+import { Edit2, CheckCircle, XCircle, Wheat, Eye } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import { THEME_COLORS } from "./constants";
 
@@ -6,6 +6,7 @@ export function SalesOrdersTable({
   orders,
   loading,
   onEdit,
+  onViewDetails,
   onViewSupplies,
   onUpdateStatus,
 }) {
@@ -58,6 +59,14 @@ export function SalesOrdersTable({
                 </td>
                 <td>
                   <div className="btn-group btn-group-sm">
+                    <button
+                      className="btn btn-outline-secondary"
+                      onClick={() => onViewDetails(order)}
+                      title="Ver detalles"
+                      disabled={loading}
+                    >
+                      <Eye size={14} />
+                    </button>
                     {order.supplies?.length > 0 && (
                       <button
                         className="btn btn-outline-secondary"
@@ -76,10 +85,10 @@ export function SalesOrdersTable({
                     >
                       <Edit2 size={14} />
                     </button>
-                    {order.status !== "completed" && (
+                    {order.status !== "completada" && (
                       <button
                         className="btn btn-outline-secondary"
-                        onClick={() => onUpdateStatus(order.id, "completed")}
+                        onClick={() => onUpdateStatus(order.id, "completada")}
                         title="Completar"
                         disabled={loading}
                       >

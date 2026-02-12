@@ -97,7 +97,7 @@ export function Inventory() {
   const loadMovementHistory = async () => {
     try {
       console.log("📥 Cargando historial de movimientos...");
-      
+
       // Cargar movimientos de productos y supplies en paralelo
       const [inventoryRes, suppliesRes] = await Promise.all([
         fetch("/api/inventory/history/all/movements?limit=200"),
@@ -113,7 +113,7 @@ export function Inventory() {
       if (inventoryRes.ok) {
         const inventoryData = await inventoryRes.json();
         console.log(`📥 Datos de inventory recibidos:`, inventoryData);
-        
+
         if (inventoryData.data && Array.isArray(inventoryData.data)) {
           const inventoryMovements = inventoryData.data.map((movement) => ({
             id: `inv-${movement.id}`,
@@ -140,7 +140,7 @@ export function Inventory() {
       if (suppliesRes.ok) {
         const suppliesData = await suppliesRes.json();
         console.log(`📥 Datos de supplies recibidos:`, suppliesData);
-        
+
         if (suppliesData.data && Array.isArray(suppliesData.data)) {
           const suppliesMovements = suppliesData.data.map((movement) => ({
             id: `sup-${movement.id}`,
@@ -164,11 +164,15 @@ export function Inventory() {
       }
 
       // Ordenar por fecha descendente
-      allMovements.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      allMovements.sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at),
+      );
 
       setMovements(allMovements);
       setSupplyMovements(allMovements);
-      console.log(`✅ Historial cargado: ${allMovements.length} movimientos totales`);
+      console.log(
+        `✅ Historial cargado: ${allMovements.length} movimientos totales`,
+      );
     } catch (error) {
       console.error("❌ Error fetching movement history:", error);
       // No mostrar error al usuario, solo en consola
@@ -201,7 +205,9 @@ export function Inventory() {
 
       if (inventoryRes.ok) {
         const data = await inventoryRes.json();
-        console.log(`✅ Inventory: ${data.deletedCount} movimientos eliminados`);
+        console.log(
+          `✅ Inventory: ${data.deletedCount} movimientos eliminados`,
+        );
         totalDeleted += data.deletedCount;
       }
 
@@ -530,8 +536,8 @@ export function Inventory() {
       />
 
       {/* History */}
-      <MovementHistory 
-        movements={currentMovements} 
+      <MovementHistory
+        movements={currentMovements}
         onClearHistory={handleClearHistory}
         isClearing={clearingHistory}
       />

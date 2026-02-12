@@ -1,5 +1,6 @@
 import express from "express";
 import upload from "../multerConfig.js";
+import { checkLowStockSupplies, createNotification, notificationService } from "./notificationService.js";
 
 export default function suppliesRoutes(pool) {
   const router = express.Router();
@@ -82,10 +83,10 @@ export default function suppliesRoutes(pool) {
 
           // Obtener total
           try {
-            const [[count]] = await pool.query(
+            const [results] = await pool.query(
               "SELECT COUNT(*) as total FROM supplies_movements",
             );
-            countResult = [count] || [{ total: 0 }];
+            countResult = results.length > 0 ? results : [{ total: 0 }];
           } catch (countError) {
             console.error(
               "[GET /history/all/movements] Error al contar:",
@@ -250,7 +251,7 @@ export default function suppliesRoutes(pool) {
         notes = "",
         userId,
       } = req.body;
-      
+
       // Aceptar tanto 'quantity' (compatible con inventario) como 'stock_quantity'
       const finalQuantity = quantity !== undefined ? quantity : stock_quantity;
 
@@ -263,11 +264,12 @@ export default function suppliesRoutes(pool) {
       connection = await pool.getConnection();
 
       // Verificar que el supply existe
-      const [[supplyExists]] = await connection.query(
+      const [supplies] = await connection.query(
         "SELECT id, stock_quantity FROM supplies WHERE id = ?",
         [id],
       );
 
+      const supplyExists = supplies.length > 0 ? supplies[0] : null;
       if (!supplyExists) {
         await connection.release();
         console.error(`[PUT /supplies/${id}] Supply no existe`);
@@ -349,10 +351,12 @@ export default function suppliesRoutes(pool) {
 
         console.log(`[PUT /supplies/${id}] ✅ Actualización exitosa`);
 
-        const [[updatedSupply]] = await connection.query(
+        const [updatedSupplies] = await connection.query(
           "SELECT * FROM supplies WHERE id = ?",
           [id],
         );
+
+        const updatedSupply = updatedSupplies.length > 0 ? updatedSupplies[0] : null;
 
         res.json({
           success: true,
@@ -393,8 +397,12 @@ export default function suppliesRoutes(pool) {
     let connection;
     try {
       const { id } = req.params;
-      const { stock_quantity, movementType = "ajuste", reason = "", userId } =
-        req.body;
+      const {
+        stock_quantity,
+        movementType = "ajuste",
+        reason = "",
+        userId,
+      } = req.body;
 
       if (stock_quantity === undefined) {
         return res.status(400).json({ error: "stock_quantity es requerido" });
@@ -408,11 +416,12 @@ export default function suppliesRoutes(pool) {
       connection = await pool.getConnection();
 
       // Verificar que el supply existe
-      const [[supply]] = await connection.query(
+      const [supplies2] = await connection.query(
         "SELECT id, stock_quantity FROM supplies WHERE id = ?",
         [id],
       );
 
+      const supply = supplies2.length > 0 ? supplies2[0] : null;
       if (!supply) {
         await connection.release();
         return res.status(404).json({ error: "Insumo no encontrado" });
@@ -424,7 +433,9 @@ export default function suppliesRoutes(pool) {
 
       if (isNaN(newQuantity)) {
         await connection.release();
-        return res.status(400).json({ error: "stock_quantity debe ser número" });
+        return res
+          .status(400)
+          .json({ error: "stock_quantity debe ser número" });
       }
 
       // Start transaction
@@ -593,7 +604,9 @@ export default function suppliesRoutes(pool) {
   // Delete all supply movement history
   router.delete("/history/clear/all", async (req, res) => {
     try {
-      console.log("[DELETE /history/clear/all] Limpiando historial de movimientos de supplies...");
+      console.log(
+        "[DELETE /history/clear/all] Limpiando historial de movimientos de supplies...",
+      );
 
       // Verificar si la tabla existe
       try {
@@ -613,14 +626,14 @@ export default function suppliesRoutes(pool) {
       }
 
       // Obtener cantidad de registros antes de borrar
-      const [[countBefore]] = await pool.query(
+      const [counts] = await pool.query(
         "SELECT COUNT(*) as total FROM supplies_movements",
       );
 
+      const countBefore = counts.length > 0 ? counts[0].total : 0;
+
       // Borrar todos los movimientos
-      const [deleteResult] = await pool.query(
-        "DELETE FROM supplies_movements",
-      );
+      const [deleteResult] = await pool.query("DELETE FROM supplies_movements");
 
       console.log(
         `[DELETE /history/clear/all] ✅ ${deleteResult.affectedRows} movimientos eliminados`,
@@ -637,6 +650,17 @@ export default function suppliesRoutes(pool) {
         error: "Error al limpiar historial",
         details: error.message,
       });
+    }
+  });
+
+  // Verificar insumos con stock bajo
+  router.post("/check/low-stock", async (req, res) => {
+    try {
+      await checkLowStockSupplies(pool);
+      res.json({ success: true, message: "Verificación de insumos con stock bajo completada" });
+    } catch (error) {
+      console.error("Error verificando insumos con bajo stock:", error);
+      res.status(500).json({ error: "Error al verificar insumos con bajo stock" });
     }
   });
 

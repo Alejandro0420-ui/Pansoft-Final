@@ -1,4 +1,5 @@
 import express from "express";
+import { checkCriticalStock, checkLowStockProducts, createNotification, notificationService } from "./notificationService.js";
 
 export default function inventoryRoutes(pool) {
   const router = express.Router();
@@ -83,10 +84,10 @@ export default function inventoryRoutes(pool) {
 
           // Obtener total
           try {
-            const [[count]] = await pool.query(
+            const [results] = await pool.query(
               "SELECT COUNT(*) as total FROM inventory_movements",
             );
-            countResult = [count] || [{ total: 0 }];
+            countResult = results.length > 0 ? results : [{ total: 0 }];
           } catch (countError) {
             console.error(
               "[GET /history/all/movements] Error al contar:",
@@ -213,11 +214,12 @@ export default function inventoryRoutes(pool) {
       connection = await pool.getConnection();
 
       // PRIMERO: Verificar que el producto existe
-      const [[productExists]] = await connection.query(
+      const [products] = await connection.query(
         "SELECT id FROM products WHERE id = ?",
         [productId],
       );
 
+      const productExists = products.length > 0 ? products[0] : null;
       if (!productExists) {
         await connection.release();
         console.error(`[PUT /inventory/${productId}] Producto no existe`);
@@ -229,11 +231,12 @@ export default function inventoryRoutes(pool) {
       );
 
       // SEGUNDO: Obtener inventario actual o crear uno
-      const [[currentInventory]] = await connection.query(
+      const [inventories] = await connection.query(
         "SELECT * FROM inventory WHERE product_id = ?",
         [productId],
       );
 
+      const currentInventory = inventories.length > 0 ? inventories[0] : null;
       let previousQuantity = 0;
 
       if (!currentInventory) {
@@ -336,12 +339,10 @@ export default function inventoryRoutes(pool) {
       }
     } catch (error) {
       console.error(`[PUT /inventory] Error:`, error.message);
-      res
-        .status(500)
-        .json({
-          error: "Error al actualizar inventario",
-          details: error.message,
-        });
+      res.status(500).json({
+        error: "Error al actualizar inventario",
+        details: error.message,
+      });
     } finally {
       if (connection) {
         try {
@@ -356,7 +357,9 @@ export default function inventoryRoutes(pool) {
   // Delete all movement history
   router.delete("/history/clear/all", async (req, res) => {
     try {
-      console.log("[DELETE /history/clear/all] Limpiando historial de movimientos...");
+      console.log(
+        "[DELETE /history/clear/all] Limpiando historial de movimientos...",
+      );
 
       // Verificar si la tabla existe
       try {
@@ -376,9 +379,11 @@ export default function inventoryRoutes(pool) {
       }
 
       // Obtener cantidad de registros antes de borrar
-      const [[countBefore]] = await pool.query(
+      const [counts] = await pool.query(
         "SELECT COUNT(*) as total FROM inventory_movements",
       );
+
+      const countBefore = counts.length > 0 ? counts[0].total : 0;
 
       // Borrar todos los movimientos
       const [deleteResult] = await pool.query(
@@ -400,6 +405,28 @@ export default function inventoryRoutes(pool) {
         error: "Error al limpiar historial",
         details: error.message,
       });
+    }
+  });
+
+  // Verificar stock crítico
+  router.post("/check/critical-stock", async (req, res) => {
+    try {
+      await checkCriticalStock(pool);
+      res.json({ success: true, message: "Verificación de stock crítico completada" });
+    } catch (error) {
+      console.error("Error verificando stock crítico:", error);
+      res.status(500).json({ error: "Error al verificar stock crítico" });
+    }
+  });
+
+  // Verificar productos con stock bajo
+  router.post("/check/low-stock", async (req, res) => {
+    try {
+      await checkLowStockProducts(pool);
+      res.json({ success: true, message: "Verificación de productos con stock bajo completada" });
+    } catch (error) {
+      console.error("Error verificando bajo stock:", error);
+      res.status(500).json({ error: "Error al verificar bajo stock" });
     }
   });
 

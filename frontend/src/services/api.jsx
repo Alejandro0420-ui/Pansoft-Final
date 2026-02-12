@@ -86,6 +86,10 @@ export const productionOrdersAPI = {
   update: (id, data) => api.put(`/production-orders/${id}`, data),
   updateStatus: (id, status) =>
     api.patch(`/production-orders/${id}/status`, { status }),
+  updateInsumo: (orderId, insumoId, data) =>
+    api.patch(`/production-orders/${orderId}/insumos/${insumoId}`, data),
+  deleteInsumo: (orderId, insumoId) =>
+    api.delete(`/production-orders/${orderId}/insumos/${insumoId}`),
   delete: (id) => api.delete(`/production-orders/${id}`),
 };
 
@@ -97,6 +101,12 @@ export const salesOrdersAPI = {
   update: (id, data) => api.put(`/sales-orders/${id}`, data),
   updateStatus: (id, status) =>
     api.patch(`/sales-orders/${id}/status`, { status }),
+  updateItem: (orderId, itemId, data) =>
+    api.patch(`/sales-orders/${orderId}/items/${itemId}`, data),
+  deleteItem: (orderId, itemId) =>
+    api.delete(`/sales-orders/${orderId}/items/${itemId}`),
+  updateInsumo: (orderId, insumoId, data) =>
+    api.patch(`/sales-orders/${orderId}/insumos/${insumoId}`, data),
   delete: (id) => api.delete(`/sales-orders/${id}`),
 };
 

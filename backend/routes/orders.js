@@ -1,4 +1,5 @@
 import express from "express";
+import { createNotification, notificationService } from "./notificationService.js";
 
 export default function ordersRoutes(pool) {
   const router = express.Router();
@@ -60,6 +61,25 @@ export default function ordersRoutes(pool) {
             item.total,
           ],
         );
+      }
+
+      // Obtener nombre del cliente para la notificación
+      try {
+        const [customer] = await pool.query(
+          "SELECT name FROM customers WHERE id = ?",
+          [customer_id]
+        );
+        const customerName = customer[0]?.name || "Cliente desconocido";
+
+        // Crear notificación de nueva orden
+        const notification = notificationService.newOrder(
+          orderId,
+          customerName,
+          total_amount
+        );
+        await createNotification(pool, notification);
+      } catch (notifError) {
+        console.error("Error al crear notificación de orden:", notifError);
       }
 
       res

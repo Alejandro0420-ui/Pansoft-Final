@@ -1,8 +1,7 @@
-import { Plus, Wheat } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Modal } from "../common/Modal";
 import { FormInput } from "../common/FormInput";
-import { SupplyInput } from "./SupplyInput";
-import { PRODUCT_PRICES, AVAILABLE_SUPPLIES, EMPLOYEES, THEME_COLORS, UNIT_OPTIONS } from "./constants";
+import { PRODUCT_PRICES, EMPLOYEES, THEME_COLORS } from "./constants";
 
 export function OrderFormModal({
   isOpen,
@@ -11,20 +10,19 @@ export function OrderFormModal({
   isEditing,
   activeTab,
   loading,
-  orderType,
-  supplies,
-  onAddSupply,
-  onRemoveSupply,
-  newSupply,
-  onNewSupplyChange,
-  onFormChange, // Nueva prop para manejar cambios de formulario
+  ordersForm,
+  salesItems,
+  newSalesItem,
+  onFormChange,
+  onAddSalesItem,
+  onRemoveSalesItem,
+  onNewSalesItemChange,
 }) {
   const isSalesOrder = activeTab === "sales";
-  const form = orderType;
+  const form = ordersForm;
 
-  const handleCalculateTotal = () => {
-    if (!form.product || !form.items) return 0;
-    return PRODUCT_PRICES[form.product] * parseInt(form.items);
+  const calculateSalesTotal = () => {
+    return salesItems.reduce((sum, item) => sum + (item.total || 0), 0);
   };
 
   const formatCurrency = (amount) => `$${Number(amount).toLocaleString("es-CO")}`;
@@ -58,6 +56,7 @@ export function OrderFormModal({
       <div className="space-y-3">
         {isSalesOrder ? (
           <>
+            {/* Cliente */}
             <FormInput
               label="Cliente"
               placeholder="Nombre del cliente"
@@ -65,34 +64,118 @@ export function OrderFormModal({
               onChange={(value) => onFormChange({ ...form, client: value })}
               required
             />
-            <FormInput
-              label="Producto"
-              type="select"
-              options={Object.keys(PRODUCT_PRICES).map((p) => ({
-                value: p,
-                label: `${p} - $${PRODUCT_PRICES[p].toLocaleString("es-CO")}`,
-              }))}
-              value={form.product || ""}
-              onChange={(value) => onFormChange({ ...form, product: value })}
-              required
-            />
-            <FormInput
-              label="Cantidad"
-              type="number"
-              value={form.items || ""}
-              onChange={(value) => onFormChange({ ...form, items: value })}
-              required
-            />
+
+            {/* Agregar Productos */}
+            <div className="border p-3 rounded">
+              <h6 className="mb-3">Agregar Productos</h6>
+              <div className="row g-2">
+                <div className="col-md-7">
+                  <FormInput
+                    label="Producto"
+                    type="select"
+                    options={[
+                      { value: "", label: "Seleccionar..." },
+                      ...Object.keys(PRODUCT_PRICES).map((p) => ({
+                        value: p,
+                        label: `${p} - $${PRODUCT_PRICES[p].toLocaleString("es-CO")}`,
+                      })),
+                    ]}
+                    value={newSalesItem.product || ""}
+                    onChange={(value) =>
+                      onNewSalesItemChange({ ...newSalesItem, product: value })
+                    }
+                  />
+                </div>
+                <div className="col-md-3">
+                  <FormInput
+                    label="Cantidad"
+                    type="number"
+                    value={newSalesItem.quantity}
+                    onChange={(value) =>
+                      onNewSalesItemChange({
+                        ...newSalesItem,
+                        quantity: Math.max(1, parseInt(value) || 1),
+                      })
+                    }
+                  />
+                </div>
+                <div className="col-md-2 d-flex align-items-end">
+                  <button
+                    className="btn w-100"
+                    style={{
+                      backgroundColor: THEME_COLORS.primary,
+                      color: "white",
+                    }}
+                    onClick={onAddSalesItem}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Productos Agregados */}
+            {salesItems.length > 0 && (
+              <div className="border rounded p-3">
+                <h6 className="mb-3">Productos en la Orden</h6>
+                <div className="table-responsive">
+                  <table className="table table-sm mb-0">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unit.</th>
+                        <th>Total</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesItems.map((item, index) => (
+                        <tr key={index}>
+                          <td>{item.product}</td>
+                          <td>{item.quantity}</td>
+                          <td>${item.unitPrice.toLocaleString("es-CO")}</td>
+                          <td>${item.total.toLocaleString("es-CO")}</td>
+                          <td>
+                            <button
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => onRemoveSalesItem(index)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan="3" className="text-end">
+                          <strong>Total:</strong>
+                        </td>
+                        <td colSpan="2">
+                          <strong style={{ color: THEME_COLORS.primary }}>
+                            ${calculateSalesTotal().toLocaleString("es-CO")}
+                          </strong>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <>
             <FormInput
               label="Producto"
               type="select"
-              options={Object.keys(PRODUCT_PRICES).map((p) => ({
-                value: p,
-                label: p,
-              }))}
+              options={[
+                { value: "", label: "Seleccionar..." },
+                ...Object.keys(PRODUCT_PRICES).map((p) => ({
+                  value: p,
+                  label: p,
+                })),
+              ]}
               value={form.product || ""}
               onChange={(value) => onFormChange({ ...form, product: value })}
               required
@@ -111,107 +194,22 @@ export function OrderFormModal({
                 <FormInput
                   label="Responsable"
                   type="select"
-                  options={EMPLOYEES.map((e) => ({
-                    value: e,
-                    label: e,
-                  }))}
+                  options={[
+                    { value: "", label: "Seleccionar..." },
+                    ...EMPLOYEES.map((e) => ({
+                      value: e,
+                      label: e,
+                    })),
+                  ]}
                   value={form.responsible || ""}
-                  onChange={(value) => onFormChange({ ...form, responsible: value })}
+                  onChange={(value) =>
+                    onFormChange({ ...form, responsible: value })
+                  }
                   required
                 />
               </div>
             </div>
           </>
-        )}
-
-        {/* Sección de Insumos */}
-        <div className="border-top pt-3 mt-3">
-          <h6>
-            <Wheat size={16} className="me-2" style={{ display: "inline" }} />
-            Insumos (Opcional)
-          </h6>
-          <div className="row g-2 mt-2">
-            <div className="col-md-6">
-              <select
-                className="form-select"
-                value={newSupply.name}
-                onChange={(e) => onNewSupplyChange({ ...newSupply, name: e.target.value })}
-              >
-                <option value="">Seleccionar insumo</option>
-                {AVAILABLE_SUPPLIES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-3">
-              <input
-                type="number"
-                className="form-control"
-                placeholder="Cantidad"
-                value={newSupply.quantity}
-                onChange={(e) =>
-                  onNewSupplyChange({ ...newSupply, quantity: e.target.value })
-                }
-              />
-            </div>
-            <div className="col-md-2">
-              <select
-                className="form-select"
-                value={newSupply.unit}
-                onChange={(e) =>
-                  onNewSupplyChange({ ...newSupply, unit: e.target.value })
-                }
-              >
-                {UNIT_OPTIONS.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-1">
-              <button
-                className="btn w-100"
-                style={{
-                  backgroundColor: THEME_COLORS.secondary,
-                  color: "white",
-                }}
-                onClick={onAddSupply}
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
-
-          {supplies.length > 0 && (
-            <div className="mt-3">
-              {supplies.map((s, i) => (
-                <SupplyInput
-                  key={i}
-                  supply={s}
-                  onRemove={onRemoveSupply}
-                  index={i}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Total para órdenes de venta */}
-        {isSalesOrder && form.product && form.items && (
-          <div
-            className="p-3 rounded-2 mt-3"
-            style={{ backgroundColor: THEME_COLORS.light, opacity: 0.2 }}
-          >
-            <div className="d-flex justify-content-between">
-              <strong>Total:</strong>
-              <strong style={{ color: THEME_COLORS.primary, fontSize: "18px" }}>
-                {formatCurrency(handleCalculateTotal())}
-              </strong>
-            </div>
-          </div>
         )}
       </div>
     </Modal>
