@@ -99,16 +99,29 @@ export default function productsRoutes(pool) {
       } = req.body;
 
       let query =
-        "UPDATE products SET name=?, sku=?, description=?, category=?, price=?, stock_quantity=?, min_stock_level=?, updated_at=NOW()";
+        "UPDATE products SET name=?, sku=?, category=?, price=?, stock_quantity=?, min_stock_level=?, updated_at=NOW()";
       let params = [
         name,
         sku,
-        description,
         category,
         price,
         stock_quantity,
         min_stock_level,
       ];
+
+      // Agregar description solo si se proporciona
+      if (description !== undefined && description !== null) {
+        query = "UPDATE products SET name=?, sku=?, description=?, category=?, price=?, stock_quantity=?, min_stock_level=?, updated_at=NOW()";
+        params = [
+          name,
+          sku,
+          description,
+          category,
+          price,
+          stock_quantity,
+          min_stock_level,
+        ];
+      }
 
       if (req.file) {
         query += ", image_url=?";

@@ -287,17 +287,32 @@ export default function suppliesRoutes(pool) {
       try {
         // Build base update query
         let query =
-          "UPDATE supplies SET name=?, sku=?, description=?, category=?, price=?, stock_quantity=?, min_stock_level=?, unit=?, updated_at=NOW()";
+          "UPDATE supplies SET name=?, sku=?, category=?, price=?, stock_quantity=?, min_stock_level=?, unit=?, updated_at=NOW()";
         let params = [
           name,
           sku,
-          description,
           category,
           price,
           newQuantity,
           min_stock_level,
           unit,
         ];
+
+        // Agregar description solo si se proporciona
+        if (description !== undefined && description !== null) {
+          query =
+            "UPDATE supplies SET name=?, sku=?, description=?, category=?, price=?, stock_quantity=?, min_stock_level=?, unit=?, updated_at=NOW()";
+          params = [
+            name,
+            sku,
+            description,
+            category,
+            price,
+            newQuantity,
+            min_stock_level,
+            unit,
+          ];
+        }
 
         if (req.file) {
           query += ", image_url=?";
