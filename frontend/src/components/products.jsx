@@ -411,7 +411,7 @@ export function Products() {
                       <tr
                         key={item.id}
                         className="align-middle"
-                        style={{ opacity: isActive ? 1 : 0.5 }}
+                        style={{ opacity: isActive ? 1 : 0.75, filter: isActive ? "none" : "grayscale(30%)" }}
                       >
                         <td>
                           <div className="d-flex align-items-center">
@@ -500,7 +500,7 @@ export function Products() {
                 <div key={item.id} className="col-md-6 col-lg-4">
                   <div
                     className="card border-0 shadow-sm h-100"
-                    style={{ opacity: isActive ? 1 : 0.6 }}
+                    style={{ opacity: isActive ? 1 : 0.8, filter: isActive ? "none" : "grayscale(30%)" }}
                   >
                     {item.image_url && (
                       <img

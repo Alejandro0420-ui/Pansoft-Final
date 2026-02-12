@@ -21,9 +21,10 @@ export function InventoryGrid({
               <div
                 className="card h-100"
                 style={{
-                  opacity: item.disabled ? 0.6 : 1,
-                  borderColor: item.disabled ? "#ccc" : "#EBB583",
+                  opacity: item.disabled ? 0.78 : 1,
+                  borderColor: item.disabled ? "#999" : "#EBB583",
                   borderWidth: "2px",
+                  filter: item.disabled ? "grayscale(30%)" : "none",
                 }}
               >
                 <div

@@ -19,9 +19,9 @@ export function ProductsTable({ items, activeTab, onEdit, onDelete, getStatusBad
               <tr
                 key={item.id}
                 style={{
-                  opacity: item.is_active === false ? 0.5 : 1,
-                  filter: item.is_active === false ? "grayscale(100%)" : "none",
-                  backgroundColor: item.is_active === false ? "#f0f0f0" : "transparent",
+                  opacity: item.is_active === false ? 0.78 : 1,
+                  filter: item.is_active === false ? "grayscale(40%)" : "none",
+                  backgroundColor: item.is_active === false ? "#f8f8f8" : "transparent",
                 }}
               >
                 <td>

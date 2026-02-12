@@ -391,7 +391,7 @@ export function Employees() {
                       </td>
                       <td>
                         <span
-                          className={`badge ${emp.status === "active" ? "bg-success" : "bg-secondary"}`}
+                          className={`badge ${emp.status === "active" ? "bg-success" : "bg-info"}`}
                         >
                           {emp.status === "active" ? "Activo" : "Inactivo"}
                         </span>

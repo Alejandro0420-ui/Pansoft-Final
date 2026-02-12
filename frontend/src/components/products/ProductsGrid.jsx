@@ -7,8 +7,8 @@ export function ProductsGrid({ items, activeTab, onEdit, onDelete, getStatusBadg
             className="card h-100 shadow-sm"
             style={{
               borderTop: "4px solid #EA7028",
-              opacity: item.is_active === false ? 0.5 : 1,
-              filter: item.is_active === false ? "grayscale(100%)" : "none",
+              opacity: item.is_active === false ? 0.78 : 1,
+              filter: item.is_active === false ? "grayscale(40%)" : "none",
               cursor: "pointer",
               transition: "all 0.3s ease",
             }}
