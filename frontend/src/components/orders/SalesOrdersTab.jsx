@@ -23,7 +23,7 @@ export function SalesOrdersTab({
       label: "Total",
       accessor: "total_amount",
       render: (value) =>
-        `$${value?.toLocaleString("es-CO", { minimumFractionDigits: 2 }) || "0"}`,
+        `COP $${value?.toLocaleString("es-CO", { minimumFractionDigits: 2 }) || "0"}`,
     },
     {
       label: "Estado",

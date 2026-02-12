@@ -436,7 +436,7 @@ export function Products() {
                         </td>
                         <td>{item.category}</td>
                         <td>
-                          $
+                          COP $
                           {Number(item.price).toLocaleString("es-CO", {
                             minimumFractionDigits: 0,
                           })}
@@ -517,7 +517,7 @@ export function Products() {
                         <strong>Categoría:</strong> {item.category}
                       </p>
                       <p className="card-text small mb-2">
-                        <strong>Precio:</strong> $
+                        <strong>Precio:</strong> COP $
                         {Number(item.price).toLocaleString("es-CO", {
                           minimumFractionDigits: 0,
                         })}

@@ -303,7 +303,7 @@ export function Suppliers() {
                   className="text-info mb-0"
                   style={{ fontFamily: "Open Sans, sans-serif" }}
                 >
-                  ${totalPurchases.toFixed(2)}
+                  COP ${totalPurchases.toFixed(2)}
                 </h3>
               </div>
               <DollarSign size={40} color="#0d6efd" />

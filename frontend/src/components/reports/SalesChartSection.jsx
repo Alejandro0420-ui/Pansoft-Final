@@ -25,7 +25,7 @@ export function SalesChartSection({ data = [] }) {
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip
-                formatter={(value) => `$${parseFloat(value).toFixed(2)}`}
+                formatter={(value) => `COP $${parseFloat(value).toFixed(2)}`}
               />
               <Line
                 type="monotone"

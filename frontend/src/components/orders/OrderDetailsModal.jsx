@@ -147,7 +147,7 @@ export function OrderDetailsModal({
                 <div className="mb-2">
                   <label className="form-label fw-bold">Total</label>
                   <p className="text-success fw-bold">
-                    ${orderDetails?.total_amount?.toLocaleString("es-CO") || "0"}
+                    COP ${orderDetails?.total_amount?.toLocaleString("es-CO") || "0"}
                   </p>
                 </div>
               )}
@@ -181,7 +181,7 @@ export function OrderDetailsModal({
                       )}
                       {isSalesOrder && (
                         <td>
-                          ${item.unit_price?.toLocaleString("es-CO") || "0"}
+                          COP ${item.unit_price?.toLocaleString("es-CO") || "0"}
                         </td>
                       )}
                       <td>
@@ -204,7 +204,7 @@ export function OrderDetailsModal({
                       </td>
                       {isSalesOrder && (
                         <td>
-                          ${(item.total || 0).toLocaleString("es-CO")}
+                          COP ${(item.total || 0).toLocaleString("es-CO")}
                         </td>
                       )}
                       <td>

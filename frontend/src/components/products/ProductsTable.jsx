@@ -38,7 +38,7 @@ export function ProductsTable({ items, activeTab, onEdit, onDelete, getStatusBad
                   </span>
                 </td>
                 <td style={{ color: "#EA7028", fontWeight: "bold" }}>
-                  ${(item.price || 0).toLocaleString("es-CO")}
+                  COP ${(item.price || 0).toLocaleString("es-CO")}
                 </td>
                 <td>
                   <span

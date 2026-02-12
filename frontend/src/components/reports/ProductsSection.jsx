@@ -26,7 +26,7 @@ export function ProductsSection({ data = [] }) {
     {
       key: "price",
       label: "Precio",
-      render: (value) => `$${parseFloat(value || 0).toFixed(2)}`,
+      render: (value) => `COP $${parseFloat(value || 0).toFixed(2)}`,
     },
   ];
 

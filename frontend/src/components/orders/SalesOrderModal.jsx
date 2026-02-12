@@ -70,7 +70,7 @@ export function SalesOrderModal({
               );
               return (
                 <option key={product.id} value={product.id} disabled={isAdded}>
-                  {product.name} - $
+                  {product.name} - COP $
                   {product.price?.toLocaleString("es-CO") || "0"}{" "}
                   {isAdded ? "(Agregado)" : ""}
                 </option>
@@ -111,8 +111,8 @@ export function SalesOrderModal({
                   className="d-flex justify-content-between align-items-center mb-2"
                 >
                   <span>
-                    {item.product_name}: {item.quantity} x $
-                    {product?.price?.toLocaleString("es-CO") || "0"} = $
+                    {item.product_name}: {item.quantity} x COP $
+                    {product?.price?.toLocaleString("es-CO") || "0"} = COP $
                     {subtotal.toLocaleString("es-CO")}
                   </span>
                   <button
