@@ -241,7 +241,7 @@ export function Inventory() {
     const statusConfig = {
       critical: { color: "#DC3545", label: "Crítico" },
       low: { color: "#EBA94D", label: "Bajo" },
-      ok: { color: "#EBCC83", label: "OK" },
+      ok: { color: "#EBCC83", label: "normal" },
     };
     const config = statusConfig[status] || statusConfig.ok;
     return (
