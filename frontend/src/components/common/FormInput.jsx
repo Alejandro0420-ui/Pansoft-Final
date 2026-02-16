@@ -1,56 +1,86 @@
 import React from "react";
 
-export function FormInput({
+export const FormInput = ({
   label,
   type = "text",
-  value,
+  placeholder = "",
+  value = "",
   onChange,
-  error,
   required = false,
-  placeholder,
-  options,
-  ...props
-}) {
+  options = [],
+  disabled = false,
+  className = "",
+  rows = 4,
+}) => {
+  const baseClass = `form-control ${className}`;
+
+  if (type === "select") {
+    return (
+      <div className="mb-3">
+        {label && (
+          <label className="form-label">
+            {label}
+            {required && <span className="text-danger">*</span>}
+          </label>
+        )}
+        <select
+          className={baseClass}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          required={required}
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  if (type === "textarea") {
+    return (
+      <div className="mb-3">
+        {label && (
+          <label className="form-label">
+            {label}
+            {required && <span className="text-danger">*</span>}
+          </label>
+        )}
+        <textarea
+          className={baseClass}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          required={required}
+          rows={rows}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="mb-3">
       {label && (
         <label className="form-label">
-          {label} {required && <span className="text-danger">*</span>}
+          {label}
+          {required && <span className="text-danger">*</span>}
         </label>
       )}
-      {type === "select" ? (
-        <select
-          className={`form-select ${error ? "is-invalid" : ""}`}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          {...props}
-        >
-          <option value="">{placeholder || "Seleccionar..."}</option>
-          {options?.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      ) : type === "textarea" ? (
-        <textarea
-          className={`form-control ${error ? "is-invalid" : ""}`}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          {...props}
-        />
-      ) : (
-        <input
-          type={type}
-          className={`form-control ${error ? "is-invalid" : ""}`}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          {...props}
-        />
-      )}
-      {error && <span className="invalid-feedback d-block">{error}</span>}
+      <input
+        type={type}
+        className={baseClass}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        required={required}
+      />
     </div>
   );
-}
+};
+
+export default FormInput;

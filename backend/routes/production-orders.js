@@ -3,7 +3,7 @@ import express from "express";
 export default function productionOrdersRoutes(pool) {
   const router = express.Router();
 
-  // Get all production orders
+  // Obtener ordenes de produccion
   router.get("/", async (req, res) => {
     try {
       console.log(

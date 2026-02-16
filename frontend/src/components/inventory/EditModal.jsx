@@ -13,7 +13,6 @@ export function EditModal({
     category: "",
     stock: "",
     min: "",
-    max: "",
     price: "",
     unit: "",
     supplier: "",
@@ -27,7 +26,6 @@ export function EditModal({
         category: item.category,
         stock: item.stock.toString(),
         min: item.min.toString(),
-        max: item.max.toString(),
         price: item.price.replace("$", ""),
         unit: item.unit,
         supplier: item.supplier || "",
@@ -135,33 +133,24 @@ export function EditModal({
                   placeholder="0"
                 />
               </div>
-              <div className="col-md-4">
-                <label className="form-label">Stock Máximo</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  style={{ borderColor: "#EBB583", borderWidth: "2px" }}
-                  value={editForm.max}
-                  onChange={(e) => handleChange("max", e.target.value)}
-                  placeholder="0"
-                />
-              </div>
             </div>
             <div className="row mb-3">
-              <div className="col-md-6">
-                <label className="form-label">Precio ($)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="form-control"
-                  style={{ borderColor: "#EBB583", borderWidth: "2px" }}
-                  value={editForm.price}
-                  onChange={(e) => handleChange("price", e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-              {isSupply && (
+              {!isSupply && (
                 <div className="col-md-6">
+                  <label className="form-label">Precio ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="form-control"
+                    style={{ borderColor: "#EBB583", borderWidth: "2px" }}
+                    value={editForm.price}
+                    onChange={(e) => handleChange("price", e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
+              {isSupply && (
+                <div className={!isSupply ? "col-md-6" : "col-md-12"}>
                   <label className="form-label">Proveedor</label>
                   <input
                     type="text"

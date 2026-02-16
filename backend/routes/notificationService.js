@@ -5,105 +5,6 @@
 
 export const notificationService = {
   /**
-   * Crear notificación de bajo inventario
-   */
-  lowStock: (productName, currentQuantity, minQuantity) => ({
-    type: "inventory",
-    title: "⚠️ Bajo inventario",
-    message: `${productName} tiene solo ${currentQuantity} unidades (mínimo: ${minQuantity})`,
-    icon: "AlertCircle",
-    color: "#FF6B6B",
-  }),
-
-  /**
-   * Crear notificación de orden completada
-   */
-  orderCompleted: (orderId, customerName) => ({
-    type: "order",
-    title: "✅ Orden completada",
-    message: `La orden #${orderId} para ${customerName} ha sido completada`,
-    icon: "CheckCircle",
-    color: "#51CF66",
-  }),
-
-  /**
-   * Crear notificación de orden pendiente
-   */
-  orderPending: (orderId, customerName) => ({
-    type: "order",
-    title: "📋 Nueva orden",
-    message: `Nueva orden #${orderId} de ${customerName} está pendiente`,
-    icon: "AlertCircle",
-    color: "#4ECDC4",
-  }),
-
-  /**
-   * Crear notificación de orden cancelada
-   */
-  orderCancelled: (orderId, reason) => ({
-    type: "warning",
-    title: "❌ Orden cancelada",
-    message: `Orden #${orderId} ha sido cancelada. Razón: ${reason}`,
-    icon: "AlertTriangle",
-    color: "#FFD93D",
-  }),
-
-  /**
-   * Crear notificación de pago recibido
-   */
-  paymentReceived: (orderId, amount) => ({
-    type: "success",
-    title: "💰 Pago recibido",
-    message: `Se ha recibido pago de $${amount} para la orden #${orderId}`,
-    icon: "CheckCircle",
-    color: "#51CF66",
-  }),
-
-  /**
-   * Crear notificación de producto sin stock
-   */
-  outOfStock: (productName) => ({
-    type: "inventory",
-    title: "🚨 Producto agotado",
-    message: `${productName} se encuentra sin stock`,
-    icon: "AlertTriangle",
-    color: "#FF6B6B",
-  }),
-
-  /**
-   * Crear notificación de nuevo proveedor
-   */
-  newSupplier: (supplierName) => ({
-    type: "info",
-    title: "🤝 Nuevo proveedor",
-    message: `Se ha registrado el proveedor ${supplierName}`,
-    icon: "Info",
-    color: "#6C5CE7",
-  }),
-
-  /**
-   * Crear notificación de cambio de estado de producción
-   */
-  productionStatusChange: (productionOrderId, status) => ({
-    type: "info",
-    title: "🏭 Estado de producción actualizado",
-    message: `Orden de producción #${productionOrderId} cambiado a: ${status}`,
-    icon: "Info",
-    color: "#6C5CE7",
-  }),
-
-  /**
-   * Crear notificación de empleado registrado
-   */
-  employeeAdded: (employeeName) => ({
-    type: "success",
-    title: "👤 Nuevo empleado",
-    message: `${employeeName} ha sido registrado como empleado`,
-    icon: "CheckCircle",
-    color: "#51CF66",
-  }),
-
-  /**
    * Crear notificación de factura vencida
    */
   overdueBilling: (invoiceNumber, daysOverdue, amount) => ({
@@ -119,7 +20,7 @@ export const notificationService = {
    */
   billingDueSoon: (invoiceNumber, daysUntilDue, amount) => ({
     type: "info",
-    title: "📅 Factura próxima a vencer",
+    title: "Factura próxima a vencer",
     message: `Factura #${invoiceNumber} vence en ${daysUntilDue} días. Monto: $${amount}`,
     icon: "Info",
     color: "#FFD93D",
@@ -130,7 +31,7 @@ export const notificationService = {
    */
   lowStockProduct: (productName, currentQuantity, minQuantity) => ({
     type: "inventory",
-    title: "📦 Producto con stock bajo",
+    title: "Producto con stock bajo",
     message: `${productName} tiene solo ${currentQuantity} unidades (mínimo: ${minQuantity})`,
     icon: "Package",
     color: "#FFD93D",
@@ -141,7 +42,7 @@ export const notificationService = {
    */
   lowStockSupply: (supplyName, currentQuantity, minQuantity) => ({
     type: "inventory",
-    title: "📋 Insumo con stock bajo",
+    title: "Insumo con stock bajo",
     message: `${supplyName} tiene solo ${currentQuantity} unidades (mínimo: ${minQuantity})`,
     icon: "AlertCircle",
     color: "#FFA500",
@@ -152,43 +53,10 @@ export const notificationService = {
    */
   criticalStock: (productName, currentQuantity, minQuantity) => ({
     type: "warning",
-    title: "🚨 Stock crítico",
+    title: "Stock crítico",
     message: `${productName} tiene solo ${currentQuantity} unidades (mínimo crítico: ${minQuantity})`,
     icon: "AlertTriangle",
     color: "#FF6B6B",
-  }),
-
-  /**
-   * Crear notificación de nueva orden
-   */
-  newOrder: (orderId, customerName, totalAmount) => ({
-    type: "order",
-    title: "📋 Nueva orden creada",
-    message: `Orden #${orderId} de ${customerName} por $${totalAmount}`,
-    icon: "ShoppingCart",
-    color: "#4ECDC4",
-  }),
-
-  /**
-   * Crear notificación de error
-   */
-  error: (title, message) => ({
-    type: "warning",
-    title: `⚠️ ${title}`,
-    message,
-    icon: "AlertTriangle",
-    color: "#FF6B6B",
-  }),
-
-  /**
-   * Crear notificación personalizada
-   */
-  custom: (type, title, message, icon = null, color = null) => ({
-    type,
-    title,
-    message,
-    icon,
-    color,
   }),
 };
 
@@ -307,18 +175,17 @@ export async function checkCriticalStock(pool) {
   try {
     // Obtener productos con stock crítico (por debajo del 30% del mínimo)
     const [criticalProducts] = await pool.query(`
-      SELECT p.id, p.name, p.sku, i.quantity, p.min_stock_level,
-             ROUND((i.quantity / p.min_stock_level) * 100, 2) as stock_percentage
+      SELECT p.id, p.name, p.sku, p.stock_quantity, p.min_stock_level,
+             ROUND((p.stock_quantity / p.min_stock_level) * 100, 2) as stock_percentage
       FROM products p
-      LEFT JOIN inventory i ON p.id = i.product_id
       WHERE (p.is_active = 1 OR p.is_active IS NULL)
       AND p.min_stock_level > 0
-      AND (i.quantity IS NULL OR i.quantity <= (p.min_stock_level * 0.3))
+      AND p.stock_quantity <= (p.min_stock_level * 0.3)
       ORDER BY stock_percentage ASC
     `);
 
     for (const product of criticalProducts) {
-      const currentQuantity = product.quantity || 0;
+      const currentQuantity = product.stock_quantity || 0;
 
       // Verificar si ya existe notificación reciente para este producto
       const [existing] = await pool.query(
@@ -351,23 +218,22 @@ export async function checkLowStockProducts(pool) {
   try {
     // Obtener productos con bajo stock (entre 30% y 100% del mínimo)
     const [lowStockProducts] = await pool.query(`
-      SELECT p.id, p.name, p.sku, i.quantity, p.min_stock_level,
-             ROUND((i.quantity / p.min_stock_level) * 100, 2) as stock_percentage
+      SELECT p.id, p.name, p.sku, p.stock_quantity, p.min_stock_level,
+             ROUND((p.stock_quantity / p.min_stock_level) * 100, 2) as stock_percentage
       FROM products p
-      LEFT JOIN inventory i ON p.id = i.product_id
       WHERE (p.is_active = 1 OR p.is_active IS NULL)
       AND p.min_stock_level > 0
-      AND (i.quantity IS NULL OR (i.quantity > (p.min_stock_level * 0.3) AND i.quantity <= p.min_stock_level))
+      AND p.stock_quantity > (p.min_stock_level * 0.3) AND p.stock_quantity <= p.min_stock_level
       ORDER BY stock_percentage ASC
     `);
 
     for (const product of lowStockProducts) {
-      const currentQuantity = product.quantity || 0;
+      const currentQuantity = product.stock_quantity || 0;
 
       // Verificar si ya existe notificación reciente para este producto
       const [existing] = await pool.query(
-        "SELECT id FROM notifications WHERE type = 'inventory' AND message LIKE ? AND created_at > DATE_SUB(NOW(), INTERVAL 6 HOUR) LIMIT 1",
-        [`%${product.name}%bajo%`],
+        "SELECT id FROM notifications WHERE type = 'inventory' AND title = 'Producto con stock bajo' AND message LIKE ? AND created_at > DATE_SUB(NOW(), INTERVAL 6 HOUR) LIMIT 1",
+        [`%${product.name}%`],
       );
 
       if (existing.length === 0) {
@@ -395,17 +261,17 @@ export async function checkLowStockSupplies(pool) {
   try {
     // Obtener insumos con bajo stock
     const [lowStockSupplies] = await pool.query(`
-      SELECT s.id, s.name, s.sku, s.current_quantity, s.min_stock_level,
-             ROUND((s.current_quantity / s.min_stock_level) * 100, 2) as stock_percentage
+      SELECT s.id, s.name, s.sku, s.stock_quantity, s.min_stock_level,
+             ROUND((s.stock_quantity / s.min_stock_level) * 100, 2) as stock_percentage
       FROM supplies s
-      WHERE (s.active = 1 OR s.active IS NULL)
+      WHERE (s.is_active = 1 OR s.is_active IS NULL)
       AND s.min_stock_level > 0
-      AND (s.current_quantity > (s.min_stock_level * 0.3) AND s.current_quantity <= s.min_stock_level)
+      AND s.stock_quantity > (s.min_stock_level * 0.3) AND s.stock_quantity <= s.min_stock_level
       ORDER BY stock_percentage ASC
     `);
 
     for (const supply of lowStockSupplies) {
-      const currentQuantity = supply.current_quantity || 0;
+      const currentQuantity = supply.stock_quantity || 0;
 
       // Verificar si ya existe notificación reciente para este insumo
       const [existing] = await pool.query(

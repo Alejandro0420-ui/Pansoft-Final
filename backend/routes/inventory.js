@@ -1,5 +1,10 @@
 import express from "express";
-import { checkCriticalStock, checkLowStockProducts, createNotification, notificationService } from "./notificationService.js";
+import {
+  checkCriticalStock,
+  checkLowStockProducts,
+  createNotification,
+  notificationService,
+} from "./notificationService.js";
 
 export default function inventoryRoutes(pool) {
   const router = express.Router();
@@ -412,7 +417,10 @@ export default function inventoryRoutes(pool) {
   router.post("/check/critical-stock", async (req, res) => {
     try {
       await checkCriticalStock(pool);
-      res.json({ success: true, message: "Verificación de stock crítico completada" });
+      res.json({
+        success: true,
+        message: "Verificación de stock crítico completada",
+      });
     } catch (error) {
       console.error("Error verificando stock crítico:", error);
       res.status(500).json({ error: "Error al verificar stock crítico" });
@@ -423,10 +431,143 @@ export default function inventoryRoutes(pool) {
   router.post("/check/low-stock", async (req, res) => {
     try {
       await checkLowStockProducts(pool);
-      res.json({ success: true, message: "Verificación de productos con stock bajo completada" });
+      res.json({
+        success: true,
+        message: "Verificación de productos con stock bajo completada",
+      });
     } catch (error) {
       console.error("Error verificando bajo stock:", error);
       res.status(500).json({ error: "Error al verificar bajo stock" });
+    }
+  });
+
+  // Procesar venta completa (factura + actualizar inventario)
+  router.post("/process-sale", async (req, res) => {
+    let connection;
+    try {
+      const { cart, invoiceNumber, invoiceDate } = req.body;
+
+      console.log("[POST /process-sale] Iniciando procesamiento de venta...", {
+        invoiceNumber,
+        items: cart.length,
+      });
+
+      if (!cart || cart.length === 0) {
+        return res.status(400).json({ error: "Carrito vacío" });
+      }
+
+      // Obtener conexión para transacción
+      connection = await pool.getConnection();
+
+      // Iniciar transacción
+      await connection.query("START TRANSACTION");
+
+      try {
+        // Para cada producto en el carrito, actualizar inventario
+        const updatedProducts = [];
+
+        for (const item of cart) {
+          console.log(
+            `[POST /process-sale] Procesando producto ${item.id}: ${item.name} x${item.quantity}`,
+          );
+
+          // Obtener inventario actual
+          const [inventories] = await connection.query(
+            "SELECT quantity FROM inventory WHERE product_id = ?",
+            [item.id],
+          );
+
+          const currentQuantity =
+            inventories.length > 0 ? inventories[0].quantity : 0;
+          const newQuantity = Math.max(0, currentQuantity - item.quantity);
+
+          // Actualizar inventario
+          await connection.query(
+            "UPDATE inventory SET quantity = ?, last_updated = NOW() WHERE product_id = ?",
+            [newQuantity, item.id],
+          );
+
+          // Actualizar también en tabla products
+          try {
+            await connection.query(
+              "UPDATE products SET stock_quantity = ?, updated_at = NOW() WHERE id = ?",
+              [newQuantity, item.id],
+            );
+          } catch (e) {
+            console.warn(
+              `Error actualizando products para ${item.id}:`,
+              e.message,
+            );
+          }
+
+          // Registrar movimiento
+          try {
+            await connection.query(
+              `
+              INSERT INTO inventory_movements 
+              (product_id, movement_type, quantity_change, previous_quantity, new_quantity, reason, notes)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+            `,
+              [
+                item.id,
+                "venta",
+                -item.quantity,
+                currentQuantity,
+                newQuantity,
+                `Venta factura ${invoiceNumber}`,
+                `${item.name} - punto de venta`,
+              ],
+            );
+          } catch (historyError) {
+            if (historyError.code !== "ER_NO_SUCH_TABLE") {
+              console.warn(
+                "Error registrando movimiento:",
+                historyError.message,
+              );
+            }
+          }
+
+          updatedProducts.push({
+            product_id: item.id,
+            name: item.name,
+            previous_quantity: currentQuantity,
+            sold_quantity: item.quantity,
+            new_quantity: newQuantity,
+          });
+        }
+
+        // Commit transacción
+        await connection.query("COMMIT");
+
+        console.log(
+          `[POST /process-sale] ✅ Venta procesada exitosamente: ${invoiceNumber}`,
+        );
+
+        res.json({
+          success: true,
+          message: "Venta procesada exitosamente",
+          invoiceNumber,
+          invoiceDate,
+          updatedProducts,
+        });
+      } catch (txError) {
+        await connection.query("ROLLBACK");
+        throw txError;
+      }
+    } catch (error) {
+      console.error("[POST /process-sale] Error:", error.message);
+      res.status(500).json({
+        error: "Error al procesar la venta",
+        details: error.message,
+      });
+    } finally {
+      if (connection) {
+        try {
+          await connection.release();
+        } catch (e) {
+          console.error("Error liberando conexión:", e);
+        }
+      }
     }
   });
 

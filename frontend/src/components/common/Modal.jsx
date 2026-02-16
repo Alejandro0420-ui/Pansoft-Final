@@ -1,60 +1,69 @@
 import React from "react";
+import { X } from "lucide-react";
 
-export function Modal({
+export const Modal = ({
   isOpen,
-  title,
   onClose,
+  title,
   children,
   size = "lg",
-  footer,
-}) {
+  centered = true,
+  backdrop = true,
+}) => {
   if (!isOpen) return null;
+
+  const handleBackdropClick = (e) => {
+    if (backdrop && e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  const sizeClasses = {
+    sm: "modal-sm",
+    lg: "modal-lg",
+    xl: "modal-xl",
+  };
 
   return (
     <div
-      className="modal d-block"
-      onClick={onClose}
+      className="modal fade show"
       style={{
+        display: "block",
         backgroundColor: "rgba(0,0,0,0.5)",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        zIndex: 1050,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "auto",
-        padding: "1rem",
       }}
+      tabIndex="-1"
+      role="dialog"
+      aria-labelledby="modalTitle"
+      aria-hidden="true"
+      onClick={handleBackdropClick}
     >
       <div
-        className={`modal-dialog modal-${size}`}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          position: "relative",
-          zIndex: 1051,
-          maxWidth: size === "sm" ? "500px" : size === "lg" ? "800px" : "600px",
-          margin: "auto",
-        }}
+        className={`modal-dialog ${sizeClasses[size] || "modal-lg"} ${
+          centered ? "modal-dialog-centered" : ""
+        }`}
+        role="document"
       >
         <div className="modal-content">
-          <div
-            className="modal-header"
-            style={{ position: "relative", zIndex: 1051 }}
-          >
-            <h5 className="modal-title">{title}</h5>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={onClose}
-            ></button>
-          </div>
+          {title && (
+            <div className="modal-header">
+              <h5 className="modal-title" id="modalTitle">
+                {title}
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={onClose}
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          )}
           <div className="modal-body">{children}</div>
-          {footer && <div className="modal-footer">{footer}</div>}
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Modal;

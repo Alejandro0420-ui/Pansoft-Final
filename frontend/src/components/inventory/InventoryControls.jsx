@@ -1,5 +1,4 @@
 import { Search, Grid3x3, List, Plus } from "lucide-react";
-import { SearchBar } from "../common/SearchBar";
 
 export function InventoryControls({
   searchTerm,

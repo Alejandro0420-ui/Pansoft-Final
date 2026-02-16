@@ -1,6 +1,10 @@
 import express from "express";
 import upload from "../multerConfig.js";
-import { checkLowStockSupplies, createNotification, notificationService } from "./notificationService.js";
+import {
+  checkLowStockSupplies,
+  createNotification,
+  notificationService,
+} from "./notificationService.js";
 
 export default function suppliesRoutes(pool) {
   const router = express.Router();
@@ -371,7 +375,8 @@ export default function suppliesRoutes(pool) {
           [id],
         );
 
-        const updatedSupply = updatedSupplies.length > 0 ? updatedSupplies[0] : null;
+        const updatedSupply =
+          updatedSupplies.length > 0 ? updatedSupplies[0] : null;
 
         res.json({
           success: true,
@@ -672,10 +677,15 @@ export default function suppliesRoutes(pool) {
   router.post("/check/low-stock", async (req, res) => {
     try {
       await checkLowStockSupplies(pool);
-      res.json({ success: true, message: "Verificación de insumos con stock bajo completada" });
+      res.json({
+        success: true,
+        message: "Verificación de insumos con stock bajo completada",
+      });
     } catch (error) {
       console.error("Error verificando insumos con bajo stock:", error);
-      res.status(500).json({ error: "Error al verificar insumos con bajo stock" });
+      res
+        .status(500)
+        .json({ error: "Error al verificar insumos con bajo stock" });
     }
   });
 

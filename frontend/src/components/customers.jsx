@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { Plus, Edit, Trash2 } from "lucide-react";
-
-const API_URL = "http://localhost:5000/api";
-const customersAPI = {
-  getAll: () => axios.get(`${API_URL}/customers`), // Asumiendo que existe
-  create: (data) => axios.post(`${API_URL}/customers`, data),
-  update: (id, data) => axios.put(`${API_URL}/customers/${id}`, data),
-  delete: (id) => axios.delete(`${API_URL}/customers/${id}`),
-};
+import { customersAPI } from "../services/api";
 
 // Fallback a un mock si no existe la API
 const mockCustomers = [

@@ -1,12 +1,7 @@
-import { Modal } from "../common/Modal";
 import { PRODUCT_RECIPES, THEME_COLORS, STATUS_COLORS } from "./constants";
+import { Modal } from "../common/Modal";
 
-export function SuppliesModal({
-  isOpen,
-  onClose,
-  selectedOrder,
-  activeTab,
-}) {
+export function SuppliesModal({ isOpen, onClose, selectedOrder, activeTab }) {
   return (
     <Modal
       isOpen={isOpen}
@@ -68,10 +63,9 @@ export function SuppliesModal({
                       <tr key={i}>
                         <td>{s.name}</td>
                         <td>
-                          {(
-                            s.quantity *
-                            (selectedOrder.quantity / 10)
-                          ).toFixed(2)}
+                          {(s.quantity * (selectedOrder.quantity / 10)).toFixed(
+                            2,
+                          )}
                         </td>
                         <td>{s.unit}</td>
                         <td>

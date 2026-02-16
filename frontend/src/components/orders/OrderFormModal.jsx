@@ -25,7 +25,8 @@ export function OrderFormModal({
     return salesItems.reduce((sum, item) => sum + (item.total || 0), 0);
   };
 
-  const formatCurrency = (amount) => `$${Number(amount).toLocaleString("es-CO")}`;
+  const formatCurrency = (amount) =>
+    `$${Number(amount).toLocaleString("es-CO")}`;
 
   return (
     <Modal
@@ -48,7 +49,11 @@ export function OrderFormModal({
             onClick={onSubmit}
             disabled={loading}
           >
-            {loading ? "Guardando..." : isEditing ? "Guardar Cambios" : "Crear Orden"}
+            {loading
+              ? "Guardando..."
+              : isEditing
+                ? "Guardar Cambios"
+                : "Crear Orden"}
           </button>
         </div>
       }
@@ -186,7 +191,9 @@ export function OrderFormModal({
                   label="Cantidad"
                   type="number"
                   value={form.quantity || ""}
-                  onChange={(value) => onFormChange({ ...form, quantity: value })}
+                  onChange={(value) =>
+                    onFormChange({ ...form, quantity: value })
+                  }
                   required
                 />
               </div>

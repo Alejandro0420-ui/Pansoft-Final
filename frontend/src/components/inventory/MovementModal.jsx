@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { AlertCircle } from "lucide-react";
+import { useState } from "react";
 
 export function MovementModal({
   isOpen,
@@ -10,30 +9,6 @@ export function MovementModal({
   onSubmit,
 }) {
   const [validationWarning, setValidationWarning] = useState("");
-
-  // Validar en tiempo real
-  useEffect(() => {
-    if (
-      !formData.product ||
-      !formData.quantity ||
-      formData.type !== "entrada"
-    ) {
-      setValidationWarning("");
-      return;
-    }
-
-    const selectedItem = items.find((item) => item.name === formData.product);
-    if (!selectedItem) return;
-
-    const newStock = selectedItem.stock + parseInt(formData.quantity || 0);
-    if (newStock > selectedItem.max) {
-      setValidationWarning(
-        `⚠️ Total: ${newStock} unidades. Máximo permitido: ${selectedItem.max}`,
-      );
-    } else {
-      setValidationWarning("");
-    }
-  }, [formData.product, formData.quantity, formData.type, items]);
 
   if (!isOpen) return null;
 
@@ -96,15 +71,6 @@ export function MovementModal({
                 />
               </div>
             </div>
-            {validationWarning && (
-              <div
-                className="alert alert-warning d-flex align-items-center gap-2 mb-3"
-                style={{ backgroundColor: "#fff3cd", borderColor: "#ffc107" }}
-              >
-                <AlertCircle size={18} style={{ color: "#856404" }} />
-                <span style={{ color: "#856404" }}>{validationWarning}</span>
-              </div>
-            )}
             <div className="mb-3">
               <label className="form-label">Motivo / Descripción</label>
               <textarea

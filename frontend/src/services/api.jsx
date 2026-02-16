@@ -7,22 +7,91 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Configurar interceptor para manejar FormData correctamente
+// ✅ Interceptor para agregar JWT automáticamente
 api.interceptors.request.use((config) => {
+  // Obtener token de localStorage
+  const token = localStorage.getItem("token");
+
+  // Si existe token, agregarlo al header Authorization
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   // Si los datos son FormData, dejar que axios configure el header automáticamente
   if (config.data instanceof FormData) {
     delete config.headers["Content-Type"];
   } else {
     config.headers["Content-Type"] = "application/json";
   }
+
   return config;
 });
 
-// Auth API
+// ✅ Interceptor para manejar errores de autenticación
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Si token expiró (401) o no autorizado (403)
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Limpiar token y redirigir a login
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  },
+);
+
+// ✅ Auth API con validaciones seguras
 export const authAPI = {
-  login: (username, password) =>
-    api.post("/auth/login", { username, password }),
-  register: (userData) => api.post("/auth/register", userData),
+  login: (username, password) => {
+    if (!username || !password) {
+      return Promise.reject(new Error("Usuario y contraseña requeridos"));
+    }
+    return api.post("/auth/login", { username, password });
+  },
+
+  register: (userData) => {
+    const { username, email, password, full_name } = userData;
+
+    // Validaciones básicas
+    if (!username || !email || !password || !full_name) {
+      return Promise.reject(new Error("Todos los campos son requeridos"));
+    }
+
+    if (password.length < 6) {
+      return Promise.reject(
+        new Error("Contraseña debe tener al menos 6 caracteres"),
+      );
+    }
+
+    if (!email.includes("@")) {
+      return Promise.reject(new Error("Email inválido"));
+    }
+
+    return api.post("/auth/register", userData);
+  },
+
+  // ✅ Guardar información del usuario después de login/register
+  saveUser: (user, token) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+  },
+
+  // ✅ Obtener usuario autenticado
+  getUser: () => {
+    const user = localStorage.getItem("user");
+    return user ? JSON.parse(user) : null;
+  },
+
+  // ✅ Logout
+  logout: () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  },
+
+  // ✅ Verificar si está autenticado
+  isAuthenticated: () => !!localStorage.getItem("token"),
 };
 
 // Dashboard API
@@ -88,8 +157,6 @@ export const productionOrdersAPI = {
     api.patch(`/production-orders/${id}/status`, { status }),
   updateInsumo: (orderId, insumoId, data) =>
     api.patch(`/production-orders/${orderId}/insumos/${insumoId}`, data),
-  deleteInsumo: (orderId, insumoId) =>
-    api.delete(`/production-orders/${orderId}/insumos/${insumoId}`),
   delete: (id) => api.delete(`/production-orders/${id}`),
 };
 
@@ -101,10 +168,6 @@ export const salesOrdersAPI = {
   update: (id, data) => api.put(`/sales-orders/${id}`, data),
   updateStatus: (id, status) =>
     api.patch(`/sales-orders/${id}/status`, { status }),
-  updateItem: (orderId, itemId, data) =>
-    api.patch(`/sales-orders/${orderId}/items/${itemId}`, data),
-  deleteItem: (orderId, itemId) =>
-    api.delete(`/sales-orders/${orderId}/items/${itemId}`),
   updateInsumo: (orderId, insumoId, data) =>
     api.patch(`/sales-orders/${orderId}/insumos/${insumoId}`, data),
   delete: (id) => api.delete(`/sales-orders/${id}`),
@@ -117,14 +180,6 @@ export const customersAPI = {
   create: (data) => api.post("/customers", data),
   update: (id, data) => api.put(`/customers/${id}`, data),
   delete: (id) => api.delete(`/customers/${id}`),
-};
-
-// Billing API
-export const billingAPI = {
-  getAll: () => api.get("/billing"),
-  getById: (id) => api.get(`/billing/${id}`),
-  create: (data) => api.post("/billing", data),
-  update: (id, data) => api.put(`/billing/${id}`, data),
 };
 
 // Employees API
@@ -141,7 +196,8 @@ export const reportsAPI = {
   getSales: (params) => api.get("/reports/sales", { params }),
   getInventory: () => api.get("/reports/inventory"),
   getCustomers: () => api.get("/reports/customers"),
-  getProductionOrders: (params) => api.get("/reports/production-orders", { params }),
+  getProductionOrders: (params) =>
+    api.get("/reports/production-orders", { params }),
   getSalesOrders: (params) => api.get("/reports/sales-orders", { params }),
   getProducts: () => api.get("/reports/products"),
   getEmployees: () => api.get("/reports/employees"),

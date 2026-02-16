@@ -27,26 +27,26 @@ try {
 
   const donaProduct = products[0];
   console.log(
-    `✅ Found: ID=${donaProduct.id}, Name=${donaProduct.name}, Current Quantity=${donaProduct.quantity}\n`,
+    `Found: ID=${donaProduct.id}, Name=${donaProduct.name}, Current Quantity=${donaProduct.quantity}\n`,
   );
 
   // 2. Get correct product ID from database
-  console.log("2️⃣ Verifying database product lookup logic...");
+  console.log("Verifying database product lookup logic...");
   const [lookupTest] = await connection.query(
     `SELECT id FROM products WHERE name = ? LIMIT 1`,
     ["Donas Glaseadas"],
   );
-  console.log(`✅ Database lookup returns ID: ${lookupTest[0].id}\n`);
+  console.log(`Database lookup returns ID: ${lookupTest[0].id}\n`);
 
   // 3. Check if any production orders exist
-  console.log("3️⃣ Checking existing production orders for Donas Glaseadas...");
+  console.log("Checking existing production orders for Donas Glaseadas...");
   const [orders] = await connection.query(
     `SELECT id, product_id, quantity, status FROM production_orders 
      WHERE product_id = ? 
      ORDER BY created_at DESC LIMIT 5`,
     [donaProduct.id],
   );
-  console.log(`✅ Found ${orders.length} production orders for this product`);
+  console.log(`Found ${orders.length} production orders for this product`);
   if (orders.length > 0) {
     console.log("Recent orders:");
     orders.forEach((order) => {

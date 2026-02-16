@@ -1,5 +1,22 @@
-import { StatCard } from "../common/StatCard";
 import { Package, Wheat, TrendingDown, TrendingUp } from "lucide-react";
+
+// Simple StatCard component
+function StatCard({ label, value, icon: Icon, color }) {
+  return (
+    <div
+      className="card p-3"
+      style={{ borderLeft: `4px solid ${color}`, backgroundColor: "#f8f9fa" }}
+    >
+      <div className="d-flex justify-content-between align-items-start">
+        <div>
+          <p className="text-muted small mb-1">{label}</p>
+          <h4 className="mb-0">{value}</h4>
+        </div>
+        <Icon size={24} color={color} />
+      </div>
+    </div>
+  );
+}
 
 export function InventoryStats({ data, type = "product" }) {
   const criticalItems = data.filter(

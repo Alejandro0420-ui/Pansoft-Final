@@ -1,5 +1,5 @@
-import { Modal } from "../common/Modal";
 import { Plus, Trash2 } from "lucide-react";
+import { Modal } from "../common/Modal";
 
 export function SalesOrderModal({
   isOpen,

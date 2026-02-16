@@ -1,4 +1,10 @@
-export function ProductsGrid({ items, activeTab, onEdit, onDelete, getStatusBadge }) {
+export function ProductsGrid({
+  items,
+  activeTab,
+  onEdit,
+  onDelete,
+  getStatusBadge,
+}) {
   return (
     <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
       {items.map((item) => (
@@ -13,10 +19,12 @@ export function ProductsGrid({ items, activeTab, onEdit, onDelete, getStatusBadg
               transition: "all 0.3s ease",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = "0 0.5rem 1rem rgba(0, 0, 0, 0.15)";
+              e.currentTarget.style.boxShadow =
+                "0 0.5rem 1rem rgba(0, 0, 0, 0.15)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)";
+              e.currentTarget.style.boxShadow =
+                "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)";
             }}
           >
             <div
@@ -42,7 +50,8 @@ export function ProductsGrid({ items, activeTab, onEdit, onDelete, getStatusBadg
                   }}
                   onError={(e) => {
                     e.target.style.display = "none";
-                    e.target.parentElement.innerHTML = activeTab === "productos" ? "📦" : "🏭";
+                    e.target.parentElement.innerHTML =
+                      activeTab === "productos" ? "📦" : "🏭";
                   }}
                 />
               ) : activeTab === "productos" ? (
@@ -62,10 +71,18 @@ export function ProductsGrid({ items, activeTab, onEdit, onDelete, getStatusBadg
               >
                 {item.name}
               </h5>
-              <p className="card-text text-muted small">SKU: <strong>{item.sku}</strong></p>
+              <p className="card-text text-muted small">
+                SKU: <strong>{item.sku}</strong>
+              </p>
 
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <span style={{ fontSize: "20px", fontWeight: "bold", color: "#EA7028" }}>
+                <span
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                    color: "#EA7028",
+                  }}
+                >
                   ${(item.price || 0).toLocaleString("es-CO")}
                 </span>
                 {getStatusBadge(item.stock_quantity, item.min_stock_level)}
@@ -73,14 +90,23 @@ export function ProductsGrid({ items, activeTab, onEdit, onDelete, getStatusBadg
 
               <div className="mb-3">
                 <small className="text-muted d-block mb-1">Categoría</small>
-                <span className="badge" style={{ backgroundColor: "#EBB583", color: "#fff" }}>
+                <span
+                  className="badge"
+                  style={{ backgroundColor: "#EBB583", color: "#fff" }}
+                >
                   {item.category}
                 </span>
               </div>
 
               <div className="mb-3">
                 <small className="text-muted d-block mb-1">Stock</small>
-                <span style={{ fontSize: "18px", fontWeight: "bold", color: "#333" }}>
+                <span
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                    color: "#333",
+                  }}
+                >
                   {item.stock_quantity} {item.unit || "unidades"}
                 </span>
               </div>

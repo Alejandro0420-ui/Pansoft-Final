@@ -1,5 +1,17 @@
-import { StatCard } from "../common/StatCard";
 import { ShoppingCart, Boxes, CheckCircle } from "lucide-react";
+
+// Simple StatCard component
+function StatCard({ label, value, color }) {
+  return (
+    <div
+      className="card p-3"
+      style={{ borderLeft: `4px solid ${color}`, backgroundColor: "#f8f9fa" }}
+    >
+      <p className="text-muted small mb-1">{label}</p>
+      <h4 className="mb-0">{value}</h4>
+    </div>
+  );
+}
 
 export function OrdersStats({ salesOrders, productionOrders }) {
   const salesCompleted = salesOrders.filter(

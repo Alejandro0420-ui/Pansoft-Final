@@ -40,7 +40,7 @@ export function InventoryTable({
               <th
                 style={{ color: "#333", fontFamily: "Open Sans, sans-serif" }}
               >
-                Min/Max
+                Min
               </th>
               {showSupplier && (
                 <th
@@ -49,11 +49,13 @@ export function InventoryTable({
                   Proveedor
                 </th>
               )}
-              <th
-                style={{ color: "#333", fontFamily: "Open Sans, sans-serif" }}
-              >
-                Precio
-              </th>
+              {!showSupplier && (
+                <th
+                  style={{ color: "#333", fontFamily: "Open Sans, sans-serif" }}
+                >
+                  Precio
+                </th>
+              )}
               <th
                 style={{ color: "#333", fontFamily: "Open Sans, sans-serif" }}
               >
@@ -90,16 +92,18 @@ export function InventoryTable({
                   className="text-muted"
                   style={{ fontFamily: "Roboto", fontSize: "0.9rem" }}
                 >
-                  {item.min} / {item.max}
+                  {item.min}
                 </td>
                 {showSupplier && (
                   <td className="text-muted" style={{ fontSize: "0.9rem" }}>
                     {item.supplier}
                   </td>
                 )}
-                <td style={{ color: "#EA7028", fontFamily: "Roboto" }}>
-                  {item.price}
-                </td>
+                {!showSupplier && (
+                  <td style={{ color: "#EA7028", fontFamily: "Roboto" }}>
+                    {item.price}
+                  </td>
+                )}
                 <td>{getStatusBadge(item.status)}</td>
                 <td>
                   <button

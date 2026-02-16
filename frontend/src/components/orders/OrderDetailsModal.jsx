@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Modal } from "../common/Modal";
 import { Edit2, Save, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { Modal } from "../common/Modal";
 import { salesOrdersAPI, productionOrdersAPI } from "../../services/api";
 
 export function OrderDetailsModal({
@@ -55,23 +55,31 @@ export function OrderDetailsModal({
       });
 
       if (activeTab === "sales") {
-        const response = await salesOrdersAPI.updateItem(selectedOrder.id, itemId, {
-          quantity: parseInt(editingValues.quantity),
-          unit_price: parseFloat(editingValues.unit_price),
-        });
+        const response = await salesOrdersAPI.updateItem(
+          selectedOrder.id,
+          itemId,
+          {
+            quantity: parseInt(editingValues.quantity),
+            unit_price: parseFloat(editingValues.unit_price),
+          },
+        );
         console.log("Respuesta de actualización:", response);
         toast.success("Item actualizado");
       } else {
-        const response = await productionOrdersAPI.updateInsumo(selectedOrder.id, itemId, {
-          quantity_required: parseInt(editingValues.quantity),
-          unit: editingValues.unit || "unidades",
-        });
+        const response = await productionOrdersAPI.updateInsumo(
+          selectedOrder.id,
+          itemId,
+          {
+            quantity_required: parseInt(editingValues.quantity),
+            unit: editingValues.unit || "unidades",
+          },
+        );
         console.log("Respuesta de actualización:", response);
         toast.success("Insumo actualizado");
       }
       setEditingItemId(null);
       if (onOrderUpdated) onOrderUpdated();
-      
+
       // Esperar un momento y luego recargar
       setTimeout(() => {
         loadOrderDetails();
@@ -107,7 +115,9 @@ export function OrderDetailsModal({
   };
 
   const isSalesOrder = activeTab === "sales";
-  const items = isSalesOrder ? orderDetails?.items : orderDetails?.insumos || [];
+  const items = isSalesOrder
+    ? orderDetails?.items
+    : orderDetails?.insumos || [];
 
   return (
     <Modal
@@ -141,13 +151,16 @@ export function OrderDetailsModal({
             <div className="col-md-6">
               <div className="mb-2">
                 <label className="form-label fw-bold">Estado</label>
-                <span className="badge bg-info">{orderDetails?.status || "-"}</span>
+                <span className="badge bg-info">
+                  {orderDetails?.status || "-"}
+                </span>
               </div>
               {isSalesOrder && (
                 <div className="mb-2">
                   <label className="form-label fw-bold">Total</label>
                   <p className="text-success fw-bold">
-                    ${orderDetails?.total_amount?.toLocaleString("es-CO") || "0"}
+                    $
+                    {orderDetails?.total_amount?.toLocaleString("es-CO") || "0"}
                   </p>
                 </div>
               )}
@@ -177,7 +190,9 @@ export function OrderDetailsModal({
                   {items.map((item) => (
                     <tr key={item.id}>
                       {isSalesOrder && (
-                        <td>{item.product_name || item.soi_product_id || "-"}</td>
+                        <td>
+                          {item.product_name || item.soi_product_id || "-"}
+                        </td>
                       )}
                       {isSalesOrder && (
                         <td>
@@ -203,9 +218,7 @@ export function OrderDetailsModal({
                         )}
                       </td>
                       {isSalesOrder && (
-                        <td>
-                          ${(item.total || 0).toLocaleString("es-CO")}
-                        </td>
+                        <td>${(item.total || 0).toLocaleString("es-CO")}</td>
                       )}
                       <td>
                         {editingItemId === item.id ? (

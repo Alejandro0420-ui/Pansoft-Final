@@ -429,12 +429,16 @@ export function Employees() {
       {showModal && (
         <div
           className="modal d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 1050,
+          }}
           role="dialog"
         >
           <div
             className="modal-dialog modal-dialog-centered modal-lg"
             role="document"
+            style={{ zIndex: 1051 }}
           >
             <div className="modal-content">
               <div className="modal-header border-bottom-0">
@@ -501,11 +505,17 @@ export function Employees() {
                     <input
                       type="number"
                       className="form-control"
-                      value={formData.salary}
+                      step="0.01"
+                      min="0"
+                      value={formData.salary === 0 ? "" : formData.salary}
+                      placeholder="0.00"
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          salary: parseFloat(e.target.value),
+                          salary:
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value),
                         })
                       }
                     />

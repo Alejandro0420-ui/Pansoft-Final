@@ -1,10 +1,17 @@
 import express from "express";
+import {
+  verifyToken,
+  checkRole,
+  authenticate,
+} from "../middleware/auth.middleware.js";
 
 export default function dashboardRoutes(pool) {
   const router = express.Router();
 
-  // Get dashboard stats
-  router.get("/stats", async (req, res) => {
+  // ✅ Ruta protegida con autenticación JWT
+  // Ejemplo: GET /api/dashboard/stats
+  // Header: Authorization: Bearer <token>
+  router.get("/stats", verifyToken, async (req, res) => {
     try {
       const statsQueries = [
         {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation, Routes, Route } from "react-router-dom";
 import { Login } from "./components/login";
 import { Dashboard } from "./components/dashboard";
 import { Inventory } from "./components/inventory";
@@ -32,9 +33,31 @@ import logo from "./images/Logo-Pansoft.png";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentPage, setCurrentPage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determinar la página actual basada en la ruta
+  const getCurrentPageFromPath = () => {
+    const path = location.pathname;
+    if (path === "/" || path === "/dashboard") return "dashboard";
+    // Mapear rutas a IDs internos
+    const routeMap = {
+      "/inventario": "inventario",
+      "/productos": "productos",
+      "/proveedores": "proveedores",
+      "/ordenes": "ordenes",
+      "/facturacion": "facturacion",
+      "/empleados": "empleados",
+      "/reportes": "reportes",
+      "/notificaciones": "notificaciones",
+      "/configuracion": "configuracion",
+    };
+    return routeMap[path] || "dashboard";
+  };
+
+  const currentPage = getCurrentPageFromPath();
 
   // Obtener conteo de notificaciones sin leer
   useEffect(() => {
@@ -61,44 +84,52 @@ function App() {
   }
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "inventory", label: "Inventario", icon: Package },
-    { id: "products", label: "Productos", icon: ShoppingBag },
-    { id: "suppliers", label: "Proveedores", icon: TruckIcon },
-    { id: "orders", label: "Órdenes", icon: ShoppingCart },
-    { id: "billing", label: "Facturación", icon: FileText },
-    { id: "employees", label: "Empleados", icon: UserCircle2 },
-    { id: "reports", label: "Reportes", icon: BarChart3 },
-    { id: "notifications", label: "Notificaciones", icon: Bell },
-    { id: "settings", label: "Configuración", icon: SettingsIcon },
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
+    {
+      id: "inventario",
+      label: "Inventario",
+      icon: Package,
+      path: "/inventario",
+    },
+    {
+      id: "productos",
+      label: "Productos",
+      icon: ShoppingBag,
+      path: "/productos",
+    },
+    {
+      id: "proveedores",
+      label: "Proveedores",
+      icon: TruckIcon,
+      path: "/proveedores",
+    },
+    { id: "ordenes", label: "Órdenes", icon: ShoppingCart, path: "/ordenes" },
+    {
+      id: "facturacion",
+      label: "Facturación",
+      icon: FileText,
+      path: "/facturacion",
+    },
+    {
+      id: "empleados",
+      label: "Empleados",
+      icon: UserCircle2,
+      path: "/empleados",
+    },
+    { id: "reportes", label: "Reportes", icon: BarChart3, path: "/reportes" },
+    {
+      id: "notificaciones",
+      label: "Notificaciones",
+      icon: Bell,
+      path: "/notificaciones",
+    },
+    {
+      id: "configuracion",
+      label: "Configuración",
+      icon: SettingsIcon,
+      path: "/configuracion",
+    },
   ];
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case "dashboard":
-        return <Dashboard />;
-      case "inventory":
-        return <Inventory />;
-      case "products":
-        return <Products />;
-      case "suppliers":
-        return <Suppliers />;
-      case "orders":
-        return <Orders />;
-      case "billing":
-        return <Billing />;
-      case "employees":
-        return <Employees />;
-      case "reports":
-        return <Reports />;
-      case "notifications":
-        return <Notifications />;
-      case "settings":
-        return <Settings />;
-      default:
-        return <Dashboard />;
-    }
-  };
 
   return (
     <div
@@ -145,7 +176,7 @@ function App() {
                     border: "none",
                     fontFamily: "Roboto, sans-serif",
                   }}
-                  onClick={() => setCurrentPage(item.id)}
+                  onClick={() => navigate(item.path)}
                 >
                   <Icon size={20} />
                   <span>{item.label}</span>
@@ -195,7 +226,7 @@ function App() {
           <div className="d-flex align-items-center gap-3">
             <button
               className="btn btn-light position-relative"
-              onClick={() => setCurrentPage("notifications")}
+              onClick={() => navigate("/notificaciones")}
               style={{ width: "40px", height: "40px", cursor: "pointer" }}
               title="Ver notificaciones"
             >
@@ -223,7 +254,19 @@ function App() {
           className="flex-grow-1 overflow-y-auto"
           style={{ flex: 1, boxSizing: "border-box" }}
         >
-          {renderPage()}
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/inventario" element={<Inventory />} />
+            <Route path="/productos" element={<Products />} />
+            <Route path="/proveedores" element={<Suppliers />} />
+            <Route path="/ordenes" element={<Orders />} />
+            <Route path="/facturacion" element={<Billing />} />
+            <Route path="/empleados" element={<Employees />} />
+            <Route path="/reportes" element={<Reports />} />
+            <Route path="/notificaciones" element={<Notifications />} />
+            <Route path="/configuracion" element={<Settings />} />
+          </Routes>
         </main>
       </div>
     </div>

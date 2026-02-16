@@ -1,4 +1,10 @@
-export function ProductsTable({ items, activeTab, onEdit, onDelete, getStatusBadge }) {
+export function ProductsTable({
+  items,
+  activeTab,
+  onEdit,
+  onDelete,
+  getStatusBadge,
+}) {
   return (
     <div className="card">
       <div className="table-responsive">
@@ -21,7 +27,8 @@ export function ProductsTable({ items, activeTab, onEdit, onDelete, getStatusBad
                 style={{
                   opacity: item.is_active === false ? 0.78 : 1,
                   filter: item.is_active === false ? "grayscale(40%)" : "none",
-                  backgroundColor: item.is_active === false ? "#f8f8f8" : "transparent",
+                  backgroundColor:
+                    item.is_active === false ? "#f8f8f8" : "transparent",
                 }}
               >
                 <td>
@@ -33,7 +40,10 @@ export function ProductsTable({ items, activeTab, onEdit, onDelete, getStatusBad
                   <code>{item.sku}</code>
                 </td>
                 <td>
-                  <span className="badge" style={{ backgroundColor: "#EBCC83", color: "#333" }}>
+                  <span
+                    className="badge"
+                    style={{ backgroundColor: "#EBCC83", color: "#333" }}
+                  >
                     {item.category}
                   </span>
                 </td>
@@ -43,14 +53,19 @@ export function ProductsTable({ items, activeTab, onEdit, onDelete, getStatusBad
                 <td>
                   <span
                     style={{
-                      color: item.stock_quantity <= item.min_stock_level ? "#EA7028" : "#333",
+                      color:
+                        item.stock_quantity <= item.min_stock_level
+                          ? "#EA7028"
+                          : "#333",
                       fontWeight: "bold",
                     }}
                   >
                     {item.stock_quantity} {item.unit || "unidades"}
                   </span>
                 </td>
-                <td>{getStatusBadge(item.stock_quantity, item.min_stock_level)}</td>
+                <td>
+                  {getStatusBadge(item.stock_quantity, item.min_stock_level)}
+                </td>
                 <td>
                   <button
                     className="btn btn-sm me-2"

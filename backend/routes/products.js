@@ -111,7 +111,8 @@ export default function productsRoutes(pool) {
 
       // Agregar description solo si se proporciona
       if (description !== undefined && description !== null) {
-        query = "UPDATE products SET name=?, sku=?, description=?, category=?, price=?, stock_quantity=?, min_stock_level=?, updated_at=NOW()";
+        query =
+          "UPDATE products SET name=?, sku=?, description=?, category=?, price=?, stock_quantity=?, min_stock_level=?, updated_at=NOW()";
         params = [
           name,
           sku,

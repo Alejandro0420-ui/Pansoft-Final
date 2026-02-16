@@ -69,9 +69,9 @@ UPDATE supplies SET supplier_id = 7 WHERE sku = 'INS-007';
 
 -- Insertar clientes
 INSERT INTO customers (name, email, phone, address, city, country, customer_type, status) VALUES
-('Panadería La Mansión', 'info@lamansion.com', '+34-91-3333333', 'Calle Mayor 100', 'Madrid', 'Spain', 'B2B', 'active'),
-('Supermercado El Centro', 'compras@elcentro.com', '+34-91-4444444', 'Avenida Central 250', 'Madrid', 'Spain', 'B2B', 'active'),
-('Cafetería Premium', 'gerencia@cafepremo.com', '+34-91-5555555', 'Plaza del Sol 50', 'Madrid', 'Spain', 'B2B', 'active');
+('Panadería La Mansión', 'info@lamansion.com', '+57 315 3333333', 'Calle Mayor 100', 'Madrid', 'Spain', 'B2B', 'active'),
+('Supermercado El Centro', 'compras@elcentro.com', '+57 312 4444444', 'Avenida Central 250', 'Madrid', 'Spain', 'B2B', 'active'),
+('Cafetería Premium', 'gerencia@cafepremo.com', '+57 311 5555555', 'Plaza del Sol 50', 'Madrid', 'Spain', 'B2B', 'active');
 
 -- Insertar órdenes
 INSERT INTO orders (order_number, customer_id, order_date, delivery_date, total_amount, status, notes) VALUES
@@ -108,23 +108,23 @@ INSERT INTO sales_reports (report_date, total_sales, total_purchases, product_ca
 (CURDATE(), 150.00, 0.00, 'Pastelería', 60),
 (DATE_SUB(CURDATE(), INTERVAL 1 DAY), 275.00, 0.00, 'Insumos', 120);
 
--- Insertar inventario de productos
-INSERT INTO inventory (product_id, warehouse_location, quantity) VALUES
-(1, 'Almacén A - Estante 1', 120),
-(2, 'Almacén A - Estante 2', 45),
-(3, 'Almacén B - Estante 1', 85),
-(4, 'Almacén B - Estante 3', 3),
-(5, 'Almacén C - Estante 1', 67),
-(6, 'Almacén C - Estante 2', 28),
-(7, 'Almacén A - Estante 3', 55),
-(8, 'Almacén B - Estante 2', 90);
+-- -- Insertar inventario de productos
+-- INSERT INTO inventory (product_id, warehouse_location, quantity) VALUES
+-- (1, 'Almacén A - Estante 1', 120),
+-- (2, 'Almacén A - Estante 2', 45),
+-- (3, 'Almacén B - Estante 1', 85),
+-- (4, 'Almacén B - Estante 3', 3),
+-- (5, 'Almacén C - Estante 1', 67),
+-- (6, 'Almacén C - Estante 2', 28),
+-- (7, 'Almacén A - Estante 3', 55),
+-- (8, 'Almacén B - Estante 2', 90);
 
--- Insertar inventario de insumos
-INSERT INTO supplies_inventory (supply_id, warehouse_location, quantity) VALUES
-(1, 'Almacén D - Estante 1', 500),
-(2, 'Almacén D - Estante 2', 80),
-(3, 'Almacén E - Estante 1', 15),
-(4, 'Almacén E - Estante 2', 45),
-(5, 'Almacén E - Estante 3', 120),
-(6, 'Almacén F - Estante 1', 25),
-(7, 'Almacén F - Estante 2', 50);
+-- -- Insertar inventario de insumos
+-- INSERT INTO supplies_inventory (supply_id, warehouse_location, quantity) VALUES
+-- (1, 'Almacén D - Estante 1', 500),
+-- (2, 'Almacén D - Estante 2', 80),
+-- (3, 'Almacén E - Estante 1', 15),
+-- (4, 'Almacén E - Estante 2', 45),
+-- (5, 'Almacén E - Estante 3', 120),
+-- (6, 'Almacén F - Estante 1', 25),
+-- (7, 'Almacén F - Estante 2', 50);

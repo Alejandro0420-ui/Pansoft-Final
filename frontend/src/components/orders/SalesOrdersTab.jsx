@@ -1,5 +1,3 @@
-import { DataTable } from "../common/DataTable";
-
 export function SalesOrdersTab({
   orders,
   products,
