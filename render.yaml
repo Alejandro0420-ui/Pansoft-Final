@@ -16,17 +16,14 @@ services:
         value: production
       - key: PORT
         value: 10000
-      - key: DB_HOST
-        value: # Set your database host
-      - key: DB_USER
-        value: # Set your database user
-      - key: DB_PASSWORD
-        value: # Set your database password (use Render secrets)
-      - key: DB_NAME
-        value: # Set your database name
+      - fromDatabase:
+          name: pansoft-db
+          property: connection_string
+        key: DATABASE_URL
 databases:
   - name: pansoft-db
     databaseName: pansoft_db
     user: pansoft_user
     region: oregon
     plan: free
+
