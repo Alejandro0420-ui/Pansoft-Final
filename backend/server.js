@@ -1,11 +1,13 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import mysql from "mysql2/promise";
+import pkg from "pg";
 import upload from "./multerConfig.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+
+const { Pool } = pkg;
 
 dotenv.config();
 
@@ -25,17 +27,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// MySQL Connection Pool
-const pool = mysql.createPool({
+// PostgreSQL Connection Pool
+const pool = new Pool({
   host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
+  user: process.env.DB_USER || "postgres",
   password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "pansoft_db",
-  port: process.env.DB_PORT || 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  charset: "utf8mb4",
+  port: process.env.DB_PORT || 5432,
+  max: 10,
 });
 
 console.log("DB Config:", {
@@ -43,17 +42,18 @@ console.log("DB Config:", {
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD ? "***" : "",
   database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 5432,
 });
 
 // Test connection
 pool
-  .getConnection()
-  .then((connection) => {
-    console.log("✓ Conectado a MySQL");
-    connection.release();
+  .connect()
+  .then((client) => {
+    console.log("✓ Conectado a PostgreSQL");
+    client.release();
   })
   .catch((err) => {
-    console.error("Error en la conexión a MySQL:", err);
+    console.error("Error en la conexión a PostgreSQL:", err);
   });
 
 // Routes
@@ -111,32 +111,10 @@ app.get("*", (req, res) => {
 
 // Función para inicializar la base de datos
 async function initializeDatabase() {
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || "localhost",
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    charset: "utf8mb4",
-  });
-
+  let connection;
   try {
+    connection = await pool.connect();
     console.log("🔧 Inicializando base de datos...");
-
-    // Crear base de datos si no existe (usar query en lugar de execute)
-    try {
-      await connection.query(
-        `CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || "pansoft_db"} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
-      );
-      console.log("  ✓ Base de datos lista");
-    } catch (err) {
-      console.warn("  ⚠️  Error al crear BD:", err.message);
-    }
-
-    // Seleccionar la base de datos
-    try {
-      await connection.query(`USE ${process.env.DB_NAME || "pansoft_db"}`);
-    } catch (err) {
-      console.warn("  ⚠️  Error al seleccionar BD:", err.message);
-    }
 
     // Ejecutar archivos SQL críticos
     const sqlFiles = ["init.sql", "create_orders_tables.sql"];
@@ -144,7 +122,20 @@ async function initializeDatabase() {
     for (const file of sqlFiles) {
       const filePath = path.join(__dirname, "db", file);
       if (fs.existsSync(filePath)) {
-        const sql = fs.readFileSync(filePath, "utf-8");
+        let sql = fs.readFileSync(filePath, "utf-8");
+        
+        // Convertir sintaxis MySQL a PostgreSQL
+        sql = sql
+          .replace(/AUTO_INCREMENT/g, "GENERATED ALWAYS AS IDENTITY")
+          .replace(/CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci/g, "")
+          .replace(/COLLATE utf8mb4_unicode_ci/g, "")
+          .replace(/CHARSET utf8mb4/g, "")
+          .replace(/ENGINE=InnoDB/g, "")
+          .replace(/CONCAT\(/g, "CONCAT_WS('',")
+          .replace(/YEAR\(/g, "EXTRACT(YEAR FROM (")
+          .replace(/SUBSTRING/g, "SUBSTR")
+          .replace(/LPAD/g, "LPAD");
+        
         const queries = sql.split(";").filter((q) => q.trim());
 
         for (const query of queries) {
@@ -152,10 +143,11 @@ async function initializeDatabase() {
             try {
               await connection.query(query);
             } catch (error) {
-              // Ignorar errores de tablas que ya existen o referencias internas
+              // Ignorar errores de tablas que ya existen
               if (
                 !error.message.includes("already exists") &&
-                !error.message.includes("FOREIGN KEY constraint fails")
+                !error.message.includes("CONSTRAINT") &&
+                !error.message.includes("foreign key")
               ) {
                 console.warn(`  ⚠️  ${file}: ${error.message}`);
               }
@@ -174,11 +166,11 @@ async function initializeDatabase() {
       // Verificar y agregar is_active
       try {
         await connection.query(
-          "ALTER TABLE suppliers ADD COLUMN is_active BOOLEAN DEFAULT TRUE",
+          "ALTER TABLE suppliers ADD COLUMN is_active BOOLEAN DEFAULT TRUE"
         );
         console.log("  ✓ Columna is_active agregada");
       } catch (err) {
-        if (!err.message.includes("Duplicate column")) {
+        if (!err.message.includes("already exists")) {
           console.warn("  ⚠️  Error con is_active:", err.message);
         }
       }
@@ -186,48 +178,50 @@ async function initializeDatabase() {
       // Verificar y agregar category
       try {
         await connection.query(
-          "ALTER TABLE suppliers ADD COLUMN category VARCHAR(100)",
+          "ALTER TABLE suppliers ADD COLUMN category VARCHAR(100)"
         );
         console.log("  ✓ Columna category agregada");
       } catch (err) {
-        if (!err.message.includes("Duplicate column")) {
+        if (!err.message.includes("already exists")) {
           console.warn("  ⚠️  Error con category:", err.message);
         }
       }
 
       // Actualizar registros NULL a activos
       await connection.query(
-        "UPDATE suppliers SET is_active = TRUE WHERE is_active IS NULL",
+        "UPDATE suppliers SET is_active = TRUE WHERE is_active IS NULL"
       );
       console.log("  ✓ Suppliers verificados\n");
 
       // Migrar números de orden de SO- a VNT- (órdenes de venta antiguas)
       console.log("🔧 Migrando números de orden de venta (SO- a VNT-)...");
       try {
-        const [soOrders] = await connection.query(
-          "SELECT COUNT(*) as count FROM sales_orders WHERE order_number LIKE 'SO-%'",
+        const soOrders = await connection.query(
+          "SELECT COUNT(*) as count FROM sales_orders WHERE order_number LIKE 'SO-%'"
         );
-        if (soOrders[0]?.count > 0) {
+        const count = parseInt(soOrders.rows[0]?.count || 0);
+        if (count > 0) {
           await connection.query(
-            "UPDATE sales_orders SET order_number = CONCAT('VNT-', SUBSTRING(order_number, 4)) WHERE order_number LIKE 'SO-%'",
+            "UPDATE sales_orders SET order_number = 'VNT-' || SUBSTRING(order_number, 4) WHERE order_number LIKE 'SO-%'"
           );
           console.log(
-            `  ✓ ${soOrders[0].count} órdenes de venta migradas de SO- a VNT-`,
+            `  ✓ ${count} órdenes de venta migradas de SO- a VNT-`
           );
         }
 
         // Migrar órdenes sin año al nuevo formato VNT-YYYY-###
-        const [oldFormatOrders] = await connection.query(
-          "SELECT COUNT(*) as count FROM sales_orders WHERE order_number LIKE 'VNT-%' AND order_number NOT LIKE 'VNT-20%' AND order_number NOT LIKE 'VNT-21%'",
+        const oldFormatOrders = await connection.query(
+          "SELECT COUNT(*) as count FROM sales_orders WHERE order_number LIKE 'VNT-%' AND order_number NOT LIKE 'VNT-20%' AND order_number NOT LIKE 'VNT-21%'"
         );
-        if (oldFormatOrders[0]?.count > 0) {
+        const oldCount = parseInt(oldFormatOrders.rows[0]?.count || 0);
+        if (oldCount > 0) {
           await connection.query(`
             UPDATE sales_orders 
-            SET order_number = CONCAT('VNT-', YEAR(order_date), '-', LPAD(SUBSTRING(order_number, 5), 3, '0'))
+            SET order_number = 'VNT-' || EXTRACT(YEAR FROM order_date)::TEXT || '-' || LPAD(SUBSTRING(order_number, 5), 3, '0')
             WHERE order_number LIKE 'VNT-%' AND order_number NOT LIKE 'VNT-20%' AND order_number NOT LIKE 'VNT-21%'
           `);
           console.log(
-            `  ✓ ${oldFormatOrders[0].count} órdenes de venta migradas al formato VNT-YYYY-###`,
+            `  ✓ ${oldCount} órdenes de venta migradas al formato VNT-YYYY-###`
           );
         }
       } catch (error) {
@@ -239,7 +233,9 @@ async function initializeDatabase() {
   } catch (error) {
     console.error("⚠️  Error durante inicialización de BD:", error.message);
   } finally {
-    await connection.end();
+    if (connection) {
+      connection.release();
+    }
   }
 }
 

@@ -1,28 +1,29 @@
 services:
   - type: web
-    name: pansoft
+    name: pansoft-backend
     runtime: node
     region: oregon
     plan: free
-    buildCommand: >
-      cd frontend &&
-      npm install &&
-      npm run build &&
-      cd ../backend &&
-      npm install
-    startCommand: cd backend && npm start
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
+        value: 3000
       - key: DB_HOST
-        value: # Railway MySQL Host (ej: containers-us-west-xxx.railway.app)
+        reference: pansoft-db.PGHOST
       - key: DB_USER
-        value: # Railway MySQL User
+        reference: pansoft-db.PGUSER
       - key: DB_PASSWORD
-        value: # Railway MySQL Password
+        reference: pansoft-db.PGPASSWORD
       - key: DB_NAME
-        value: pansoft_db
+        reference: pansoft-db.PGDATABASE
       - key: DB_PORT
-        value: # Railway MySQL Port (usualmente 3306)
+        reference: pansoft-db.PGPORT
+databases:
+  - name: pansoft-db
+    databaseName: pansoft_db
+    user: pansoft_user
+    region: oregon
+    plan: free
