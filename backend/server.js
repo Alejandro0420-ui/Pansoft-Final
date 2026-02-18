@@ -99,6 +99,15 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "OK", message: "Backend está funcionando" });
 });
 
+// ===== FRONTEND SERVING (PRODUCTION) =====
+// Servir archivos estáticos del frontend compilado
+app.use(express.static(path.join(__dirname, "dist")));
+
+// Redirect all non-API routes to index.html (for React Router)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+
 // Función para inicializar la base de datos
 async function initializeDatabase() {
   const connection = await mysql.createConnection({

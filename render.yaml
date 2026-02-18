@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: pansoft
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: >
+      cd frontend &&
+      npm install &&
+      npm run build &&
+      cd ../backend &&
+      npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_HOST
+        value: # Set your database host
+      - key: DB_USER
+        value: # Set your database user
+      - key: DB_PASSWORD
+        value: # Set your database password (use Render secrets)
+      - key: DB_NAME
+        value: # Set your database name
+databases:
+  - name: pansoft-db
+    databaseName: pansoft_db
+    user: pansoft_user
+    region: oregon
+    plan: free
