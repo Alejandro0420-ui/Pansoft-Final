@@ -1,24 +1,66 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import {
   Plus,
   Edit,
-  Trash2,
+  UserX,
   Search,
   Mail,
   Phone,
   MapPin,
   Truck,
   UserCheck,
-  DollarSign,
+  XCircle,
 } from "lucide-react";
 
 const API_URL = "http://localhost:5000/api";
 const suppliersAPI = {
-  getAll: () => axios.get(`${API_URL}/suppliers`),
-  create: (data) => axios.post(`${API_URL}/suppliers`, data),
-  update: (id, data) => axios.put(`${API_URL}/suppliers/${id}`, data),
-  delete: (id) => axios.delete(`${API_URL}/suppliers/${id}`),
+  getAll: () =>
+    fetch(`${API_URL}/suppliers`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then((r) => r.json())
+      .then((data) => ({ data: Array.isArray(data) ? data : [] }))
+      .catch((err) => {
+        console.error("Error cargando proveedores:", err);
+        return { data: [] };
+      }),
+  create: (data) =>
+    fetch(`${API_URL}/suppliers`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }).then((r) => r.json()),
+  update: (id, data) =>
+    fetch(`${API_URL}/suppliers/${id}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        ...(!(data instanceof FormData) && {
+          "Content-Type": "application/json",
+        }),
+      },
+      body: data instanceof FormData ? data : JSON.stringify(data),
+    }).then((r) => r.json()),
+  toggleStatus: (id) =>
+    fetch(`${API_URL}/suppliers/${id}/toggle-status`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+      },
+    }).then((r) => r.json()),
+  delete: (id) =>
+    fetch(`${API_URL}/suppliers/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }).then((r) => r.json()),
 };
 
 export function Suppliers() {
@@ -27,6 +69,7 @@ export function Suppliers() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [showInactive, setShowInactive] = useState(true); // Mostrar TODOS por defecto
   const [formData, setFormData] = useState({
     company_name: "",
     contact_person: "",
@@ -132,24 +175,50 @@ export function Suppliers() {
     }
   };
 
-  const handleDeleteSupplier = async (id, name) => {
-    if (!window.confirm(`¿Estás seguro de que quieres eliminar a ${name}?`))
+  const handleToggleStatus = async (id, supplier) => {
+    console.log("🎬 handleToggleStatus iniciado para:", {
+      id,
+      company_name: supplier.company_name,
+    });
+
+    const action = supplier.is_active ? "deshabilitar" : "habilitar";
+    if (
+      !window.confirm(
+        `¿Estás seguro de que quieres ${action} a ${supplier.company_name}?`,
+      )
+    )
       return;
+
     try {
-      await suppliersAPI.delete(id);
-      setSuccess("Proveedor eliminado exitosamente");
+      console.log("📤 Llamando a toggleStatus con ID:", id);
+      const url = `${API_URL}/suppliers/${id}/toggle-status`;
+      console.log("🔗 URL:", url);
+
+      const response = await suppliersAPI.toggleStatus(id);
+      console.log("✅ Respuesta del servidor:", response);
+
+      const mensaje = supplier.is_active
+        ? `${supplier.company_name} fue DESHABILITADO`
+        : `${supplier.company_name} fue HABILITADO`;
+      alert(mensaje);
+      setSuccess(mensaje);
       setTimeout(() => {
         loadSuppliers();
         setSuccess("");
-      }, 1000);
+      }, 500);
     } catch (error) {
-      console.error("Error eliminando proveedor:", error);
-      setError("Error al eliminar proveedor");
+      console.error("❌ Error completo:", error);
+      const errorMsg =
+        error?.error ||
+        error?.message ||
+        "Error al cambiar estado del proveedor";
+      alert(`❌ ${errorMsg}`);
+      setError(errorMsg);
     }
   };
 
-  const filteredSuppliers = suppliers.filter(
-    (supplier) =>
+  const filteredSuppliers = suppliers.filter((supplier) => {
+    const matchesSearch =
       (supplier.company_name || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
@@ -158,14 +227,23 @@ export function Suppliers() {
         .includes(searchTerm.toLowerCase()) ||
       (supplier.category || "")
         .toLowerCase()
-        .includes(searchTerm.toLowerCase()),
-  );
+        .includes(searchTerm.toLowerCase());
+
+    // Si showInactive es false, solo mostrar proveedores activos
+    // Si showInactive es true, mostrar todos
+    const isActive = supplier.is_active !== 0;
+    const matchesStatus = showInactive ? true : isActive;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const totalSuppliers = suppliers.length;
-  const totalPurchases = suppliers.reduce(
-    (sum, s) => sum + (parseFloat(s.total_purchases) || 0),
-    0,
-  );
+  const totalActive = suppliers.filter(
+    (s) => s.is_active === 1 || s.is_active === true,
+  ).length;
+  const totalInactive = suppliers.filter(
+    (s) => s.is_active === 0 || s.is_active === false,
+  ).length;
 
   return (
     <div className="container-fluid py-4">
@@ -276,7 +354,7 @@ export function Suppliers() {
                   className="text-success mb-0"
                   style={{ fontFamily: "Open Sans, sans-serif" }}
                 >
-                  {totalSuppliers}
+                  {totalActive}
                 </h3>
               </div>
               <UserCheck size={40} color="#28a745" />
@@ -288,25 +366,25 @@ export function Suppliers() {
             className="card h-100 border-0"
             style={{
               background:
-                "linear-gradient(to bottom right, white, rgba(0, 123, 255, 0.1))",
+                "linear-gradient(to bottom right, white, rgba(220, 53, 69, 0.1))",
             }}
           >
             <div className="card-body d-flex justify-content-between align-items-center">
               <div>
                 <p
-                  className="text-info mb-1"
+                  className="text-danger mb-1"
                   style={{ fontFamily: "Roboto, sans-serif" }}
                 >
-                  Compras Totales
+                  Proveedores Inactivos
                 </p>
                 <h3
-                  className="text-info mb-0"
+                  className="text-danger mb-0"
                   style={{ fontFamily: "Open Sans, sans-serif" }}
                 >
-                  ${totalPurchases.toFixed(2)}
+                  {totalInactive}
                 </h3>
               </div>
-              <DollarSign size={40} color="#0d6efd" />
+              <XCircle size={40} color="#dc3545" />
             </div>
           </div>
         </div>
@@ -318,12 +396,11 @@ export function Suppliers() {
           <div className="d-flex gap-3">
             <div className="flex-grow-1 position-relative">
               <Search
-                size={20}
+                size={18}
                 className="position-absolute"
                 style={{
                   left: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
+                  top: "12px",
                   color: "#999",
                 }}
               />
@@ -340,17 +417,17 @@ export function Suppliers() {
             </div>
             <button
               className="btn border-2"
-              style={{ borderColor: "#EBA94D", color: "#EA7028" }}
-              onClick={() => alert("Funcionalidad de filtros próximamente")}
+              style={{
+                borderColor: showInactive ? "#EA7028" : "#EBA94D",
+                color: showInactive ? "white" : "#EA7028",
+                backgroundColor: showInactive ? "#EA7028" : "transparent",
+                whiteSpace: "nowrap",
+                padding: "0.5rem 1rem",
+                height: "fit-content",
+              }}
+              onClick={() => setShowInactive(!showInactive)}
             >
-              Filtros
-            </button>
-            <button
-              className="btn border-2"
-              style={{ borderColor: "#EBA94D", color: "#EA7028" }}
-              onClick={() => alert("Exportando proveedores...")}
-            >
-              Exportar
+              {showInactive ? "Solo Activos" : "Ver Todos"}
             </button>
           </div>
         </div>
@@ -459,6 +536,14 @@ export function Suppliers() {
                               style={{ fontFamily: "Roboto, sans-serif" }}
                             >
                               {supplier.company_name}
+                              {supplier.is_active === 0 && (
+                                <span
+                                  className="badge bg-danger ms-2"
+                                  style={{ fontSize: "0.75rem" }}
+                                >
+                                  Deshabilitado
+                                </span>
+                              )}
                             </p>
                             <p
                               className="mb-0 small text-muted"
@@ -523,16 +608,22 @@ export function Suppliers() {
                           </button>
                           <button
                             className="btn btn-sm"
-                            style={{ color: "#dc3545", border: "none" }}
+                            style={{
+                              color: supplier.is_active ? "#dc3545" : "#28a745",
+                              border: "none",
+                            }}
                             onClick={() =>
-                              handleDeleteSupplier(
-                                supplier.id,
-                                supplier.company_name,
-                              )
+                              handleToggleStatus(supplier.id, supplier)
                             }
-                            title="Eliminar"
+                            title={
+                              supplier.is_active ? "Deshabilitar" : "Habilitar"
+                            }
                           >
-                            <Trash2 size={18} />
+                            {supplier.is_active ? (
+                              <UserX size={18} />
+                            ) : (
+                              <UserCheck size={18} />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -553,13 +644,14 @@ export function Suppliers() {
           style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}
         >
           <div
-            className="modal-dialog modal-lg"
+            className="modal-dialog modal-xl"
             onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "1200px", marginTop: "5rem" }}
           >
             <div className="modal-content border-0 shadow-lg">
               <div
                 className="modal-header border-bottom"
-                style={{ borderColor: "#EBB583" }}
+                style={{ borderColor: "#EBB583", padding: "1rem" }}
               >
                 <h5
                   className="modal-title"
@@ -576,7 +668,14 @@ export function Suppliers() {
                   onClick={closeModal}
                 ></button>
               </div>
-              <div className="modal-body">
+              <div
+                className="modal-body"
+                style={{
+                  padding: "1rem",
+                  maxHeight: "70vh",
+                  overflowY: "auto",
+                }}
+              >
                 {error && (
                   <div
                     className="alert alert-danger alert-dismissible fade show mb-3"
@@ -604,19 +703,20 @@ export function Suppliers() {
                   </div>
                 )}
 
-                <div className="mb-3">
+                <div className="mb-2">
                   <label
                     className="form-label"
                     style={{
                       fontFamily: "Roboto, sans-serif",
                       fontWeight: 500,
+                      marginBottom: "0.3rem",
                     }}
                   >
                     Nombre de la Empresa *
                   </label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="form-control form-control-sm"
                     style={{ borderColor: "#EBB583" }}
                     placeholder="Ej: Molinos XYZ"
                     value={formData.company_name}
@@ -626,21 +726,22 @@ export function Suppliers() {
                   />
                 </div>
 
-                <div className="row">
+                <div className="row g-2">
                   <div className="col-md-6">
-                    <div className="mb-3">
+                    <div className="mb-2">
                       <label
                         className="form-label"
                         style={{
                           fontFamily: "Roboto, sans-serif",
                           fontWeight: 500,
+                          marginBottom: "0.3rem",
                         }}
                       >
                         Persona de Contacto *
                       </label>
                       <input
                         type="text"
-                        className="form-control"
+                        className="form-control form-control-sm"
                         style={{ borderColor: "#EBB583" }}
                         placeholder="Ej: Juan Pérez"
                         value={formData.contact_person || ""}
@@ -654,19 +755,20 @@ export function Suppliers() {
                     </div>
                   </div>
                   <div className="col-md-6">
-                    <div className="mb-3">
+                    <div className="mb-2">
                       <label
                         className="form-label"
                         style={{
                           fontFamily: "Roboto, sans-serif",
                           fontWeight: 500,
+                          marginBottom: "0.3rem",
                         }}
                       >
                         Correo Electrónico *
                       </label>
                       <input
                         type="email"
-                        className="form-control"
+                        className="form-control form-control-sm"
                         style={{ borderColor: "#EBB583" }}
                         placeholder="contacto@empresa.com"
                         value={formData.email || ""}
@@ -678,21 +780,22 @@ export function Suppliers() {
                   </div>
                 </div>
 
-                <div className="row">
+                <div className="row g-2">
                   <div className="col-md-6">
-                    <div className="mb-3">
+                    <div className="mb-2">
                       <label
                         className="form-label"
                         style={{
                           fontFamily: "Roboto, sans-serif",
                           fontWeight: 500,
+                          marginBottom: "0.3rem",
                         }}
                       >
                         Teléfono *
                       </label>
                       <input
                         type="tel"
-                        className="form-control"
+                        className="form-control form-control-sm"
                         style={{ borderColor: "#EBB583" }}
                         placeholder="+1 234-567-8900"
                         value={formData.phone || ""}
@@ -703,18 +806,19 @@ export function Suppliers() {
                     </div>
                   </div>
                   <div className="col-md-6">
-                    <div className="mb-3">
+                    <div className="mb-2">
                       <label
                         className="form-label"
                         style={{
                           fontFamily: "Roboto, sans-serif",
                           fontWeight: 500,
+                          marginBottom: "0.3rem",
                         }}
                       >
                         Categoría de Productos
                       </label>
                       <select
-                        className="form-select"
+                        className="form-select form-select-sm"
                         style={{ borderColor: "#EBB583" }}
                         value={formData.category || ""}
                         onChange={(e) =>
@@ -745,21 +849,26 @@ export function Suppliers() {
                   </div>
                 </div>
 
-                <div className="mb-3">
+                <div className="mb-2">
                   <label
                     className="form-label"
                     style={{
                       fontFamily: "Roboto, sans-serif",
                       fontWeight: 500,
+                      marginBottom: "0.3rem",
                     }}
                   >
                     Dirección
                   </label>
                   <textarea
                     className="form-control"
-                    style={{ borderColor: "#EBB583", resize: "none" }}
+                    style={{
+                      borderColor: "#EBB583",
+                      resize: "none",
+                      fontSize: "0.9rem",
+                    }}
                     placeholder="Dirección completa"
-                    rows="3"
+                    rows="2"
                     value={formData.address || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, address: e.target.value })
@@ -767,76 +876,47 @@ export function Suppliers() {
                   ></textarea>
                 </div>
 
-                <div className="row">
+                <div className="row g-2">
                   <div className="col-md-6">
-                    <div className="mb-3">
+                    <div className="mb-2">
                       <label
                         className="form-label"
                         style={{
                           fontFamily: "Roboto, sans-serif",
                           fontWeight: 500,
+                          marginBottom: "0.3rem",
                         }}
                       >
                         Ciudad
                       </label>
-                      <input
-                        type="text"
-                        className="form-control"
+                      <select
+                        className="form-select form-select-sm"
                         style={{ borderColor: "#EBB583" }}
                         value={formData.city || ""}
                         onChange={(e) =>
                           setFormData({ ...formData, city: e.target.value })
                         }
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="mb-3">
-                      <label
-                        className="form-label"
-                        style={{
-                          fontFamily: "Roboto, sans-serif",
-                          fontWeight: 500,
-                        }}
                       >
-                        País
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        style={{ borderColor: "#EBB583" }}
-                        value={formData.country || ""}
-                        onChange={(e) =>
-                          setFormData({ ...formData, country: e.target.value })
-                        }
-                      />
+                        <option value="">Seleccione ciudad</option>
+                        <option value="Bogotá">Bogotá</option>
+                        <option value="Medellín">Medellín</option>
+                        <option value="Cali">Cali</option>
+                        <option value="Barranquilla">Barranquilla</option>
+                        <option value="Cartagena">Cartagena</option>
+                        <option value="Santa Marta">Santa Marta</option>
+                        <option value="Bucaramanga">Bucaramanga</option>
+                        <option value="Cúcuta">Cúcuta</option>
+                        <option value="Ibagué">Ibagué</option>
+                        <option value="Manizales">Manizales</option>
+                        <option value="Pereira">Pereira</option>
+                        <option value="Armenia">Armenia</option>
+                        <option value="Villavicencio">Villavicencio</option>
+                        <option value="Cali">Cali</option>
+                        <option value="Quibdó">Quibdó</option>
+                        <option value="Valledupar">Valledupar</option>
+                      </select>
                     </div>
                   </div>
-                </div>
-
-                <div className="mb-3">
-                  <label
-                    className="form-label"
-                    style={{
-                      fontFamily: "Roboto, sans-serif",
-                      fontWeight: 500,
-                    }}
-                  >
-                    Términos de Pago
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    style={{ borderColor: "#EBB583" }}
-                    placeholder="Ej: Net 30"
-                    value={formData.payment_terms || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        payment_terms: e.target.value,
-                      })
-                    }
-                  />
                 </div>
               </div>
               <div

@@ -16,7 +16,6 @@ export function ProductionOrdersTable({
         <thead style={{ backgroundColor: THEME_COLORS.light }}>
           <tr>
             <th>N° Orden</th>
-            <th>Producto</th>
             <th>Fecha</th>
             <th>Cantidad</th>
             <th>Responsable</th>

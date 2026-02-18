@@ -13,28 +13,21 @@ const SUPPLIES_CATEGORIES = [
   "Condimentos",
 ];
 
-export function SuppliesSection({ onShowModal, onEditProduct }) {
-  const [supplies, setSupplies] = useState([]);
+export function SuppliesSection({
+  supplies = [],
+  onShowModal,
+  onEditProduct,
+  onRefresh,
+}) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState("list");
 
   useEffect(() => {
-    loadSupplies();
-  }, []);
-
-  const loadSupplies = async () => {
-    try {
-      setLoading(true);
-      const response = await suppliesAPI.getAll();
-      setSupplies(response.data || response || []);
-    } catch (error) {
-      console.error("Error cargando insumos:", error);
-      toast.error("Error al cargar insumos");
-    } finally {
-      setLoading(false);
+    if (onRefresh) {
+      onRefresh();
     }
-  };
+  }, []);
 
   const handleToggleStatus = async (item) => {
     const newStatus = item.is_active !== 0 ? "desactivar" : "activar";
@@ -45,13 +38,11 @@ export function SuppliesSection({ onShowModal, onEditProduct }) {
     ) {
       try {
         await suppliesAPI.toggleStatus(item.id);
-        const newState = newStatus === "desactivar" ? 0 : 1;
-        setSupplies(
-          supplies.map((s) =>
-            s.id === item.id ? { ...s, is_active: newState } : s,
-          ),
-        );
         toast.success("Estado actualizado");
+        // Recargar insumos del padre para reflejar el cambio
+        if (onRefresh) {
+          onRefresh();
+        }
       } catch (error) {
         toast.error("Error al actualizar estado");
       }

@@ -2,7 +2,7 @@
 export const PRODUCT_PRICES = {
   "Pan Francés": 1500,
   "Pan Integral": 2000,
-  Croissants: 2500,
+  "Croissants": 2500,
   "Tortas de Chocolate": 25000,
   "Donas Glaseadas": 1800,
   "Galletas de Mantequilla": 8500,

@@ -66,8 +66,9 @@ export function Employees() {
 
   const filteredEmployees = employees.filter((emp) => {
     // Filtrar por estado (activo/inactivo)
+    // Si showInactive es false, solo mostrar activos
+    // Si showInactive es true, mostrar todos
     if (!showInactive && emp.status !== "active") return false;
-    if (showInactive && emp.status !== "inactive") return false;
 
     const fullName = `${emp.first_name} ${emp.last_name}`.toLowerCase();
     return (
@@ -128,7 +129,7 @@ export function Employees() {
 
     try {
       if (editingEmployee) {
-        // Actualizar
+        // Actualizar - INCLUIR el status actual
         const updateData = {
           first_name: formData.first_name,
           last_name: formData.last_name,
@@ -138,6 +139,7 @@ export function Employees() {
           department: formData.department,
           hire_date: formData.hire_date,
           salary: formData.salary,
+          status: editingEmployee.status || "active", // Mantener status actual
         };
         await employeesAPI.update(editingEmployee.id, updateData);
         toast.success("Empleado actualizado");

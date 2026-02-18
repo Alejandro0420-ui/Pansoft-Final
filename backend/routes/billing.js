@@ -41,7 +41,7 @@ async function generateUniqueInvoiceNumber(pool) {
 export default function billingRoutes(pool) {
   const router = express.Router();
 
-  // Get all invoices
+  // Obtener todas las facturas 
   router.get("/", async (req, res) => {
     try {
       const [result] = await pool.query(`
@@ -56,7 +56,7 @@ export default function billingRoutes(pool) {
     }
   });
 
-  // Get invoice by ID
+  // Obtener factura por ID
   router.get("/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -70,7 +70,7 @@ export default function billingRoutes(pool) {
     }
   });
 
-  // Create invoice
+  // Crear factura
   router.post("/", async (req, res) => {
     try {
       let {

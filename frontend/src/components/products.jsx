@@ -14,6 +14,7 @@ const FINISHED_PRODUCTS_CATEGORIES = [
   "Galletas",
   "Muffins",
   "Salados",
+  "Otros",
 ];
 const SUPPLIES_CATEGORIES = [
   "Harinas",
@@ -22,6 +23,7 @@ const SUPPLIES_CATEGORIES = [
   "Lácteos",
   "Saborizantes",
   "Condimentos",
+  "Otros",
 ];
 
 export function Products() {
@@ -30,6 +32,8 @@ export function Products() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [products, setProducts] = useState([]);
   const [supplies, setSupplies] = useState([]);
+  const [imageFile, setImageFile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
@@ -47,14 +51,17 @@ export function Products() {
 
   const loadAllData = async () => {
     try {
+      console.log("📥 Cargando productos e insumos...");
       const [productsRes, suppliesRes] = await Promise.all([
         productsAPI.getAll(),
         suppliesAPI.getAll(),
       ]);
+      console.log("✅ Productos recibidos:", productsRes);
+      console.log("✅ Insumos recibidos:", suppliesRes);
       setProducts(productsRes.data || productsRes || []);
       setSupplies(suppliesRes.data || suppliesRes || []);
     } catch (error) {
-      console.error("Error cargando datos:", error);
+      console.error("❌ Error cargando datos:", error);
       toast.error("Error al cargar datos");
     }
   };
@@ -70,6 +77,7 @@ export function Products() {
       min_stock_level: "",
       unit: "kg",
     });
+    setImageFile(null);
     setEditingProduct(null);
   };
 
@@ -94,21 +102,37 @@ export function Products() {
   };
 
   const handleSave = async () => {
+    console.log("🔍 handleSave ejecutado", { formData, activeTab });
+
     if (
       !formData.name ||
       !formData.sku ||
       !formData.category ||
       !formData.price
     ) {
-      toast.error("Complete todos los campos requeridos");
+      console.warn(" Campos requeridos faltando", {
+        name: formData.name,
+        sku: formData.sku,
+        category: formData.category,
+        price: formData.price,
+      });
+      const mensaje = "Complete todos los campos requeridos";
+      alert(mensaje);
+      toast.error(mensaje);
       return;
     }
 
+    setIsLoading(true);
     try {
       const api = activeTab === "productos" ? productsAPI : suppliesAPI;
       const itemList = activeTab === "productos" ? products : supplies;
+      console.log("📤 Enviando datos:", {
+        api,
+        activeTab,
+        itemList: itemList.length,
+      });
 
-      // Validar duplicados
+      // Validar duplicados por SKU
       if (
         itemList.some(
           (item) =>
@@ -116,37 +140,99 @@ export function Products() {
             (!editingProduct || item.id !== editingProduct.id),
         )
       ) {
-        toast.error(`El SKU "${formData.sku}" ya existe`);
+        const mensaje = `El SKU "${formData.sku}" ya existe en la sistema. Por favor usa uno diferente.`;
+        console.warn(mensaje);
+        alert(mensaje);
+        toast.error(mensaje);
+        setIsLoading(false);
         return;
       }
 
-      if (editingProduct) {
-        await api.update(editingProduct.id, formData);
-        toast.success(
-          `${activeTab === "productos" ? "Producto" : "Insumo"} actualizado`,
-        );
-      } else {
-        await api.create(formData);
-        toast.success(
-          `${activeTab === "productos" ? "Producto" : "Insumo"} agregado`,
-        );
+      // Validar duplicados por Nombre
+      if (
+        itemList.some(
+          (item) =>
+            item.name.toLowerCase() === formData.name.toLowerCase() &&
+            (!editingProduct || item.id !== editingProduct.id),
+        )
+      ) {
+        const mensaje = ` El nombre "${formData.name}" ya existe en el sistema. Por favor usa uno diferente.`;
+        console.warn(mensaje);
+        alert(mensaje);
+        toast.error(mensaje);
+        setIsLoading(false);
+        return;
       }
 
-      loadAllData();
+      // Crear FormData para enviar archivos
+      const data = new FormData();
+      data.append("name", formData.name);
+      data.append("sku", formData.sku);
+      data.append("description", formData.description || "");
+      data.append("price", formData.price);
+      data.append("category", formData.category);
+      data.append("stock_quantity", formData.stock_quantity || 0);
+      data.append("min_stock_level", formData.min_stock_level || 0);
+      if (activeTab === "insumos") {
+        data.append("unit", formData.unit || "kg");
+      }
+
+      // Agregar imagen si existe
+      if (imageFile) {
+        data.append("image", imageFile);
+      }
+
+      let response;
+      if (editingProduct) {
+        console.log(" Actualizando producto:", editingProduct.id);
+        response = await api.update(editingProduct.id, data);
+        console.log(" Producto actualizado:", response);
+        const mensaje = ` ${activeTab === "productos" ? "Producto" : "Insumo"} actualizado exitosamente`;
+        alert(mensaje);
+        toast.success(mensaje);
+      } else {
+        console.log("Creando nuevo producto...");
+        response = await api.create(data);
+        console.log("Producto creado:", response);
+        const mensaje = `${activeTab === "productos" ? "Producto" : "Insumo"} creado exitosamente`;
+        alert(mensaje);
+        toast.success(mensaje);
+      }
+
+      console.log("Cerrando modal y recargando datos...");
       setShowModal(false);
       resetForm();
+      // Recargar datos después de cerrar modal
+      setTimeout(() => {
+        console.log("Recargando datos...");
+        loadAllData();
+      }, 500);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error al guardar");
+      console.error("Error completo al guardar:", error);
+      console.error("Status:", error.response?.status);
+      console.error("Data:", error.response?.data);
+      console.error("Message:", error.message);
+
+      // Extraer el mensaje de error más descriptivo
+      const mensajeError =
+        error.response?.data?.error ||
+        error.message ||
+        "Error al guardar el producto";
+
+      console.error("Mensaje de error final:", mensajeError);
+      alert(`Error: ${mensajeError}`);
+      toast.error(mensajeError);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div
       style={{
-        height: "100%",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
       {/* Header & Controls Wrapper */}
@@ -217,14 +303,18 @@ export function Products() {
       <div style={{ flex: 1, overflow: "auto", padding: "1rem" }}>
         {activeTab === "productos" && (
           <ProductsSection
+            products={products}
             onShowModal={() => setShowModal(true)}
             onEditProduct={openEditModal}
+            onRefresh={loadAllData}
           />
         )}
         {activeTab === "insumos" && (
           <SuppliesSection
+            supplies={supplies}
             onShowModal={() => setShowModal(true)}
             onEditProduct={openEditModal}
+            onRefresh={loadAllData}
           />
         )}
       </div>
@@ -370,6 +460,17 @@ export function Products() {
                       <option value="un">un</option>
                     </select>
                   </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Imagen (Opcional)</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setImageFile(e.target.files?.[0] || null)
+                      }
+                    />
+                  </div>
                 </div>
               </div>
               <div className="modal-footer border-top-0">
@@ -388,8 +489,22 @@ export function Products() {
                   className="btn"
                   style={{ backgroundColor: "#EA7028", color: "white" }}
                   onClick={handleSave}
+                  disabled={isLoading}
                 >
-                  {editingProduct ? "Guardar Cambios" : "Crear"}
+                  {isLoading ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      Guardando...
+                    </>
+                  ) : editingProduct ? (
+                    "Guardar Cambios"
+                  ) : (
+                    "Crear"
+                  )}
                 </button>
               </div>
             </div>

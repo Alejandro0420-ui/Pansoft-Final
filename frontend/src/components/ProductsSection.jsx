@@ -14,28 +14,21 @@ const FINISHED_PRODUCTS_CATEGORIES = [
   "Salados",
 ];
 
-export function ProductsSection({ onShowModal, onEditProduct }) {
-  const [products, setProducts] = useState([]);
+export function ProductsSection({
+  products = [],
+  onShowModal,
+  onEditProduct,
+  onRefresh,
+}) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState("list");
 
   useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const response = await productsAPI.getAll();
-      setProducts(response.data || response || []);
-    } catch (error) {
-      console.error("Error cargando productos:", error);
-      toast.error("Error al cargar productos");
-    } finally {
-      setLoading(false);
+    if (onRefresh) {
+      onRefresh();
     }
-  };
+  }, []);
 
   const handleToggleStatus = async (item) => {
     const newStatus = item.is_active !== 0 ? "desactivar" : "activar";
@@ -46,13 +39,11 @@ export function ProductsSection({ onShowModal, onEditProduct }) {
     ) {
       try {
         await productsAPI.toggleStatus(item.id);
-        const newState = newStatus === "desactivar" ? 0 : 1;
-        setProducts(
-          products.map((p) =>
-            p.id === item.id ? { ...p, is_active: newState } : p,
-          ),
-        );
         toast.success("Estado actualizado");
+        // Recargar productos del padre para reflejar el cambio
+        if (onRefresh) {
+          onRefresh();
+        }
       } catch (error) {
         toast.error("Error al actualizar estado");
       }

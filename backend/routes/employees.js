@@ -57,19 +57,17 @@ export default function employeesRoutes(pool) {
           salary,
         ],
       );
-      res
-        .status(201)
-        .json({
-          id: result.insertId,
-          first_name,
-          last_name,
-          email,
-          phone,
-          position,
-          department,
-          hire_date,
-          salary,
-        });
+      res.status(201).json({
+        id: result.insertId,
+        first_name,
+        last_name,
+        email,
+        phone,
+        position,
+        department,
+        hire_date,
+        salary,
+      });
     } catch (error) {
       console.error("Error al crear empleado:", error);
       res.status(500).json({ error: "Error al crear empleado" });
@@ -91,6 +89,10 @@ export default function employeesRoutes(pool) {
         salary,
         status,
       } = req.body;
+
+      // Usar "active" como valor por defecto si no viene status
+      const employeeStatus = status || "active";
+
       await pool.query(
         "UPDATE employees SET first_name=?, last_name=?, email=?, phone=?, position=?, department=?, hire_date=?, salary=?, status=?, updated_at=NOW() WHERE id=?",
         [
@@ -102,7 +104,7 @@ export default function employeesRoutes(pool) {
           department,
           hire_date,
           salary,
-          status,
+          employeeStatus,
           id,
         ],
       );
@@ -116,7 +118,7 @@ export default function employeesRoutes(pool) {
         department,
         hire_date,
         salary,
-        status,
+        status: employeeStatus,
       });
     } catch (error) {
       console.error("Error al actualizar empleado:", error);

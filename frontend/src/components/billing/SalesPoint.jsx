@@ -173,7 +173,16 @@ export function SalesPoint() {
   }
 
   return (
-    <div style={{ height: "100%", display: "flex", overflow: "hidden" }}>
+    <div
+      style={{
+        height: "100%",
+        width: "100%",
+        maxWidth: "100%",
+        display: "flex",
+        overflow: "hidden",
+        overflowX: "hidden",
+      }}
+    >
       {/* Main Layout */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {/* Header */}
@@ -214,9 +223,10 @@ export function SalesPoint() {
               overflow: "auto",
               padding: "1rem",
               borderRight: "1px solid #dee2e6",
+              minWidth: 0,
             }}
           >
-            <div className="row g-2">
+            <div className="row g-2" style={{ margin: 0 }}>
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => (
                   <div key={product.id} className="col-md-6 col-lg-4">
@@ -450,12 +460,26 @@ export function SalesPoint() {
       {showInvoice && (
         <div
           className="modal d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.7)",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1070,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "auto",
+          }}
           role="dialog"
+          onClick={() => setShowInvoice(false)}
         >
           <div
             className="modal-dialog modal-dialog-centered modal-lg"
             role="document"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-content">
               <div className="modal-header border-bottom-0">

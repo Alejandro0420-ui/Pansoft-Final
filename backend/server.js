@@ -70,7 +70,13 @@ import reportsRoutes from "./routes/reports.js";
 import productionOrdersRoutes from "./routes/production-orders.js";
 import salesOrdersRoutes from "./routes/sales-orders.js";
 import notificationsRoutes from "./routes/notifications.js";
-import { checkOverdueInvoices, checkUpcomingDueDates, checkCriticalStock, checkLowStockProducts, checkLowStockSupplies } from "./routes/notificationService.js";
+import {
+  checkOverdueInvoices,
+  checkUpcomingDueDates,
+  checkCriticalStock,
+  checkLowStockProducts,
+  checkLowStockSupplies,
+} from "./routes/notificationService.js";
 
 // Register routes
 app.use("/api/auth", authRoutes(pool));
@@ -150,6 +156,76 @@ async function initializeDatabase() {
     }
 
     console.log("✓ Base de datos inicializada correctamente\n");
+
+    // Asegurar que suppliers tiene las columnas is_active y category
+    try {
+      console.log("🔧 Verificando columnas de suppliers...");
+
+      // Verificar y agregar is_active
+      try {
+        await connection.query(
+          "ALTER TABLE suppliers ADD COLUMN is_active BOOLEAN DEFAULT TRUE",
+        );
+        console.log("  ✓ Columna is_active agregada");
+      } catch (err) {
+        if (!err.message.includes("Duplicate column")) {
+          console.warn("  ⚠️  Error con is_active:", err.message);
+        }
+      }
+
+      // Verificar y agregar category
+      try {
+        await connection.query(
+          "ALTER TABLE suppliers ADD COLUMN category VARCHAR(100)",
+        );
+        console.log("  ✓ Columna category agregada");
+      } catch (err) {
+        if (!err.message.includes("Duplicate column")) {
+          console.warn("  ⚠️  Error con category:", err.message);
+        }
+      }
+
+      // Actualizar registros NULL a activos
+      await connection.query(
+        "UPDATE suppliers SET is_active = TRUE WHERE is_active IS NULL",
+      );
+      console.log("  ✓ Suppliers verificados\n");
+
+      // Migrar números de orden de SO- a VNT- (órdenes de venta antiguas)
+      console.log("🔧 Migrando números de orden de venta (SO- a VNT-)...");
+      try {
+        const [soOrders] = await connection.query(
+          "SELECT COUNT(*) as count FROM sales_orders WHERE order_number LIKE 'SO-%'",
+        );
+        if (soOrders[0]?.count > 0) {
+          await connection.query(
+            "UPDATE sales_orders SET order_number = CONCAT('VNT-', SUBSTRING(order_number, 4)) WHERE order_number LIKE 'SO-%'",
+          );
+          console.log(
+            `  ✓ ${soOrders[0].count} órdenes de venta migradas de SO- a VNT-`,
+          );
+        }
+
+        // Migrar órdenes sin año al nuevo formato VNT-YYYY-###
+        const [oldFormatOrders] = await connection.query(
+          "SELECT COUNT(*) as count FROM sales_orders WHERE order_number LIKE 'VNT-%' AND order_number NOT LIKE 'VNT-20%' AND order_number NOT LIKE 'VNT-21%'",
+        );
+        if (oldFormatOrders[0]?.count > 0) {
+          await connection.query(`
+            UPDATE sales_orders 
+            SET order_number = CONCAT('VNT-', YEAR(order_date), '-', LPAD(SUBSTRING(order_number, 5), 3, '0'))
+            WHERE order_number LIKE 'VNT-%' AND order_number NOT LIKE 'VNT-20%' AND order_number NOT LIKE 'VNT-21%'
+          `);
+          console.log(
+            `  ✓ ${oldFormatOrders[0].count} órdenes de venta migradas al formato VNT-YYYY-###`,
+          );
+        }
+      } catch (error) {
+        console.warn("⚠️  No se pudo migrar órdenes de venta:", error.message);
+      }
+    } catch (error) {
+      console.warn("⚠️  Error verificando suppliers:", error.message);
+    }
   } catch (error) {
     console.error("⚠️  Error durante inicialización de BD:", error.message);
   } finally {
@@ -164,75 +240,93 @@ async function startServer() {
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor Pansoft ejecutándose en puerto ${PORT}`);
-      
+
       // ===== TAREAS PROGRAMADAS DE NOTIFICACIONES =====
       console.log("⏰ Configurando tareas programadas de notificaciones...\n");
-      
+
       // 1. Verificar facturas vencidas cada hora
       console.log("  ✓ Verificación de facturas vencidas cada hora");
       setInterval(() => {
         console.log("🔔 [Tarea] Verificando facturas vencidas...");
-        checkOverdueInvoices(pool).catch(err => 
-          console.error("❌ Error en verificación de facturas vencidas:", err.message)
+        checkOverdueInvoices(pool).catch((err) =>
+          console.error(
+            "❌ Error en verificación de facturas vencidas:",
+            err.message,
+          ),
         );
       }, 3600000); // 1 hora
-      
+
       // Ejecutar en los primeros 30 segundos
       setTimeout(() => {
         console.log("🔔 [Tarea] Verificación inicial de facturas vencidas");
-        checkOverdueInvoices(pool).catch(err => 
-          console.error("❌ Error:", err.message)
+        checkOverdueInvoices(pool).catch((err) =>
+          console.error("❌ Error:", err.message),
         );
       }, 30000);
-      
+
       // 2. Verificar facturas próximas a vencer cada 12 horas
-      console.log("  ✓ Verificación de facturas próximas a vencer cada 12 horas");
+      console.log(
+        "  ✓ Verificación de facturas próximas a vencer cada 12 horas",
+      );
       setInterval(() => {
         console.log("🔔 [Tarea] Verificando facturas próximas a vencer...");
-        checkUpcomingDueDates(pool, 3).catch(err => 
-          console.error("❌ Error en verificación de próximas facturas:", err.message)
+        checkUpcomingDueDates(pool, 3).catch((err) =>
+          console.error(
+            "❌ Error en verificación de próximas facturas:",
+            err.message,
+          ),
         );
       }, 43200000); // 12 horas
-      
+
       // Ejecutar en los primeros 60 segundos
       setTimeout(() => {
         console.log("🔔 [Tarea] Verificación inicial de próximas facturas");
-        checkUpcomingDueDates(pool, 3).catch(err => 
-          console.error("❌ Error:", err.message)
+        checkUpcomingDueDates(pool, 3).catch((err) =>
+          console.error("❌ Error:", err.message),
         );
       }, 60000);
-      
+
       // 3. Verificar stock crítico cada 30 minutos
       console.log("  ✓ Verificación de stock crítico cada 30 minutos");
       setInterval(() => {
         console.log("🔔 [Tarea] Verificando stock crítico...");
-        checkCriticalStock(pool).catch(err => 
-          console.error("❌ Error en verificación de stock crítico:", err.message)
+        checkCriticalStock(pool).catch((err) =>
+          console.error(
+            "❌ Error en verificación de stock crítico:",
+            err.message,
+          ),
         );
       }, 1800000); // 30 minutos
-      
+
       // Ejecutar en los primeros 90 segundos
       setTimeout(() => {
         console.log("🔔 [Tarea] Verificación inicial de stock crítico");
-        checkCriticalStock(pool).catch(err => 
-          console.error("❌ Error:", err.message)
+        checkCriticalStock(pool).catch((err) =>
+          console.error("❌ Error:", err.message),
         );
       }, 90000);
 
       // 4. Verificar productos con stock bajo cada 45 minutos
-      console.log("  ✓ Verificación de productos con stock bajo cada 45 minutos");
+      console.log(
+        "  ✓ Verificación de productos con stock bajo cada 45 minutos",
+      );
       setInterval(() => {
         console.log("🔔 [Tarea] Verificando productos con stock bajo...");
-        checkLowStockProducts(pool).catch(err => 
-          console.error("❌ Error en verificación de productos bajo stock:", err.message)
+        checkLowStockProducts(pool).catch((err) =>
+          console.error(
+            "❌ Error en verificación de productos bajo stock:",
+            err.message,
+          ),
         );
       }, 2700000); // 45 minutos
-      
+
       // Ejecutar en los primeros 120 segundos
       setTimeout(() => {
-        console.log("🔔 [Tarea] Verificación inicial de productos con stock bajo");
-        checkLowStockProducts(pool).catch(err => 
-          console.error("❌ Error:", err.message)
+        console.log(
+          "🔔 [Tarea] Verificación inicial de productos con stock bajo",
+        );
+        checkLowStockProducts(pool).catch((err) =>
+          console.error("❌ Error:", err.message),
         );
       }, 120000);
 
@@ -240,19 +334,24 @@ async function startServer() {
       console.log("  ✓ Verificación de insumos con stock bajo cada 45 minutos");
       setInterval(() => {
         console.log("🔔 [Tarea] Verificando insumos con stock bajo...");
-        checkLowStockSupplies(pool).catch(err => 
-          console.error("❌ Error en verificación de insumos bajo stock:", err.message)
+        checkLowStockSupplies(pool).catch((err) =>
+          console.error(
+            "❌ Error en verificación de insumos bajo stock:",
+            err.message,
+          ),
         );
       }, 2700000); // 45 minutos
-      
+
       // Ejecutar en los primeros 150 segundos
       setTimeout(() => {
-        console.log("🔔 [Tarea] Verificación inicial de insumos con stock bajo");
-        checkLowStockSupplies(pool).catch(err => 
-          console.error("❌ Error:", err.message)
+        console.log(
+          "🔔 [Tarea] Verificación inicial de insumos con stock bajo",
+        );
+        checkLowStockSupplies(pool).catch((err) =>
+          console.error("❌ Error:", err.message),
         );
       }, 150000);
-      
+
       console.log("\n✅ Tareas programadas configuradas correctamente\n");
     });
   } catch (error) {

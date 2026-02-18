@@ -26,6 +26,39 @@ export default function suppliesRoutes(pool) {
 
   // ⚠️ RUTAS ESPECÍFICAS ANTES DE LAS GENÉRICAS
 
+  // Toggle supply status (/:id/toggle-status ANTES de /:id)
+  router.patch("/:id/toggle-status", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Obtener estado actual
+      const [current] = await pool.query(
+        "SELECT is_active FROM supplies WHERE id = ?",
+        [id],
+      );
+
+      if (!current.length) {
+        return res.status(404).json({ error: "Insumo no encontrado" });
+      }
+
+      const newStatus = !current[0].is_active;
+
+      // Cambiar estado
+      await pool.query(
+        "UPDATE supplies SET is_active = ?, updated_at = NOW() WHERE id = ?",
+        [newStatus, id],
+      );
+
+      res.json({ success: true, is_active: newStatus });
+    } catch (error) {
+      console.error("Error al cambiar estado del insumo:", error);
+      res.status(500).json({
+        error: "Error al cambiar estado del insumo",
+        details: error.message,
+      });
+    }
+  });
+
   // Get all supply movements (ESPECÍFICO - antes de /:id)
   router.get("/history/all/movements", async (req, res) => {
     try {
@@ -192,6 +225,36 @@ export default function suppliesRoutes(pool) {
         min_stock_level,
         unit,
       } = req.body;
+
+      // Validar campos requeridos
+      if (!name || !sku || !category || !price) {
+        return res.status(400).json({
+          error: "Nombre, SKU, categoría y precio son campos obligatorios",
+        });
+      }
+
+      // Verificar si el SKU ya existe
+      const [existingSku] = await pool.query(
+        "SELECT id FROM supplies WHERE LOWER(sku) = LOWER(?)",
+        [sku],
+      );
+      if (existingSku.length > 0) {
+        return res.status(409).json({
+          error: `El SKU "${sku}" ya existe en el sistema. Por favor usa un SKU diferente.`,
+        });
+      }
+
+      // Verificar si el nombre ya existe
+      const [existingName] = await pool.query(
+        "SELECT id FROM supplies WHERE LOWER(name) = LOWER(?)",
+        [name],
+      );
+      if (existingName.length > 0) {
+        return res.status(409).json({
+          error: `El nombre "${name}" ya existe en el sistema. Por favor usa un nombre diferente.`,
+        });
+      }
+
       const imageUrl = req.file ? `/images/${req.file.filename}` : null;
 
       const [result] = await pool.query(
@@ -208,7 +271,11 @@ export default function suppliesRoutes(pool) {
           imageUrl,
         ],
       );
+
+      console.log("✅ Insumo creado exitosamente:", result.insertId);
       res.status(201).json({
+        success: true,
+        message: `${name} creado exitosamente`,
         id: result.insertId,
         name,
         sku,
@@ -218,14 +285,13 @@ export default function suppliesRoutes(pool) {
         stock_quantity,
         min_stock_level,
         unit,
-        supplier_id,
         image_url: imageUrl,
       });
     } catch (error) {
       console.error("Error al crear insumo:", error);
       if (error.code === "ER_DUP_ENTRY") {
         res.status(409).json({
-          error: `El nombre "${error.sqlMessage.match(/'([^']*)'/)?.[1] || "proporcionado"}" ya existe. Por favor usa un nombre único.`,
+          error: `El nombre "${error.sqlMessage.match(/'([^']*)'/)?.[1] || "proporcionado"}" ya existe. Por favor usa uno diferente.`,
         });
       } else {
         res
@@ -534,39 +600,6 @@ export default function suppliesRoutes(pool) {
     } catch (error) {
       console.error("Error al deshabilitar insumo:", error);
       res.status(500).json({ error: "Error al deshabilitar insumo" });
-    }
-  });
-
-  // Toggle supply status
-  router.patch("/:id/toggle-status", async (req, res) => {
-    try {
-      const { id } = req.params;
-
-      // Obtener estado actual
-      const [current] = await pool.query(
-        "SELECT is_active FROM supplies WHERE id = ?",
-        [id],
-      );
-
-      if (!current.length) {
-        return res.status(404).json({ error: "Insumo no encontrado" });
-      }
-
-      const newStatus = !current[0].is_active;
-
-      // Cambiar estado
-      await pool.query(
-        "UPDATE supplies SET is_active = ?, updated_at = NOW() WHERE id = ?",
-        [newStatus, id],
-      );
-
-      res.json({ success: true, is_active: newStatus });
-    } catch (error) {
-      console.error("Error al cambiar estado del insumo:", error);
-      res.status(500).json({
-        error: "Error al cambiar estado del insumo",
-        details: error.message,
-      });
     }
   });
 

@@ -4,7 +4,44 @@ import upload from "../multerConfig.js";
 export default function productsRoutes(pool) {
   const router = express.Router();
 
-  // Get all products
+  // ⚠️ RUTAS ESPECÍFICAS PRIMERO (/:id/toggle-status debe IR ANTES que /:id)
+
+  // Toggle product status
+  router.patch("/:id/toggle-status", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Obtener estado actual
+      const [current] = await pool.query(
+        "SELECT is_active FROM products WHERE id = ?",
+        [id],
+      );
+
+      if (!current.length) {
+        return res.status(404).json({ error: "Producto no encontrado" });
+      }
+
+      const newStatus = !current[0].is_active;
+
+      // Cambiar estado
+      await pool.query(
+        "UPDATE products SET is_active = ?, updated_at = NOW() WHERE id = ?",
+        [newStatus, id],
+      );
+
+      res.json({ success: true, is_active: newStatus });
+    } catch (error) {
+      console.error("Error al cambiar estado del producto:", error);
+      res.status(500).json({
+        error: "Error al cambiar estado del producto",
+        details: error.message,
+      });
+    }
+  });
+
+  // ⚠️ RUTAS GENÉRICAS DESPUÉS (/:id las captura)
+
+  // Obtener todos los productos
   router.get("/", async (req, res) => {
     try {
       // Consulta simple para diagnóstico
@@ -44,6 +81,36 @@ export default function productsRoutes(pool) {
         stock_quantity,
         min_stock_level,
       } = req.body;
+
+      // Validar campos requeridos
+      if (!name || !sku || !category || !price) {
+        return res.status(400).json({
+          error: "Nombre, SKU, categoría y precio son campos obligatorios",
+        });
+      }
+
+      // Verificar si el SKU ya existe
+      const [existingSku] = await pool.query(
+        "SELECT id FROM products WHERE LOWER(sku) = LOWER(?)",
+        [sku],
+      );
+      if (existingSku.length > 0) {
+        return res.status(409).json({
+          error: `El SKU "${sku}" ya existe en el sistema. Por favor usa un SKU diferente.`,
+        });
+      }
+
+      // Verificar si el nombre ya existe
+      const [existingName] = await pool.query(
+        "SELECT id FROM products WHERE LOWER(name) = LOWER(?)",
+        [name],
+      );
+      if (existingName.length > 0) {
+        return res.status(409).json({
+          error: `El nombre "${name}" ya existe en el sistema. Por favor usa un nombre diferente.`,
+        });
+      }
+
       const imageUrl = req.file ? `/images/${req.file.filename}` : null;
 
       const [result] = await pool.query(
@@ -59,7 +126,11 @@ export default function productsRoutes(pool) {
           imageUrl,
         ],
       );
+
+      console.log("✅ Producto creado exitosamente:", result.insertId);
       res.status(201).json({
+        success: true,
+        message: `${name} creado exitosamente`,
         id: result.insertId,
         name,
         sku,
@@ -150,7 +221,7 @@ export default function productsRoutes(pool) {
     }
   });
 
-  // Disable product (soft delete)
+  //  Deshabilitar producto vía DELETE
   router.delete("/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -162,39 +233,6 @@ export default function productsRoutes(pool) {
     } catch (error) {
       console.error("Error al deshabilitar producto:", error);
       res.status(500).json({ error: "Error al deshabilitar producto" });
-    }
-  });
-
-  // Toggle product status
-  router.patch("/:id/toggle-status", async (req, res) => {
-    try {
-      const { id } = req.params;
-
-      // Obtener estado actual
-      const [current] = await pool.query(
-        "SELECT is_active FROM products WHERE id = ?",
-        [id],
-      );
-
-      if (!current.length) {
-        return res.status(404).json({ error: "Producto no encontrado" });
-      }
-
-      const newStatus = !current[0].is_active;
-
-      // Cambiar estado
-      await pool.query(
-        "UPDATE products SET is_active = ?, updated_at = NOW() WHERE id = ?",
-        [newStatus, id],
-      );
-
-      res.json({ success: true, is_active: newStatus });
-    } catch (error) {
-      console.error("Error al cambiar estado del producto:", error);
-      res.status(500).json({
-        error: "Error al cambiar estado del producto",
-        details: error.message,
-      });
     }
   });
 

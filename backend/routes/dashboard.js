@@ -8,10 +8,9 @@ import {
 export default function dashboardRoutes(pool) {
   const router = express.Router();
 
-  // ✅ Ruta protegida con autenticación JWT
-  // Ejemplo: GET /api/dashboard/stats
-  // Header: Authorization: Bearer <token>
-  router.get("/stats", verifyToken, async (req, res) => {
+  // Ruta pública - Sin autenticación requerida
+  // GET /api/dashboard/stats
+  router.get("/stats", async (req, res) => {
     try {
       const statsQueries = [
         {
@@ -48,7 +47,7 @@ export default function dashboardRoutes(pool) {
     }
   });
 
-  // Get sales and purchases data
+  // obtener datos para gráficos - GET /api/dashboard/charts
   router.get("/charts", async (req, res) => {
     try {
       const salesQuery = `
@@ -91,7 +90,7 @@ export default function dashboardRoutes(pool) {
     }
   });
 
-  // Get recent alerts
+  // obtener alertas de stock bajo 
   router.get("/alerts", async (req, res) => {
     try {
       const alertsQuery = `
@@ -112,7 +111,7 @@ export default function dashboardRoutes(pool) {
     }
   });
 
-  // Get recent activity
+  // obtener actividad reciente
   router.get("/activity", async (req, res) => {
     try {
       const activityQuery = `

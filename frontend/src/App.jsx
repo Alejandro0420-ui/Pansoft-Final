@@ -240,9 +240,7 @@ function App() {
                 </span>
               )}
             </button>
-            <img
-              src="https://i.pravatar.cc/40?img=5"
-              alt="User"
+            <span
               className="rounded-circle"
               style={{ width: "40px", height: "40px" }}
             />
@@ -252,7 +250,12 @@ function App() {
         {/* Content Area */}
         <main
           className="flex-grow-1 overflow-y-auto"
-          style={{ flex: 1, boxSizing: "border-box" }}
+          style={{
+            flex: 1,
+            boxSizing: "border-box",
+            width: "100%",
+            overflowX: "hidden",
+          }}
         >
           <Routes>
             <Route path="/" element={<Dashboard />} />

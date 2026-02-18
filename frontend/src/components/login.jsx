@@ -79,12 +79,6 @@ export function Login({ onLogin }) {
             </div>
 
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <div className="form-check">
-                <input className="form-check-input" type="checkbox" id="remember" />
-                <label className="form-check-label" htmlFor="remember" style={{ fontFamily: 'Roboto, sans-serif' }}>
-                  Recordarme
-                </label>
-              </div>
               <a href="#" style={{ color: '#EA7028', textDecoration: 'none', fontFamily: 'Roboto, sans-serif' }}>
                 ¿Olvidó su contraseña?
               </a>

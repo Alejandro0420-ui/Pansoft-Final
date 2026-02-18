@@ -132,17 +132,21 @@ export default function salesOrdersRoutes(pool) {
           .json({ error: "El nombre del cliente es requerido" });
       }
 
-      // Generate order number
+      // Generate order number with current year
       try {
+        const currentYear = new Date().getFullYear();
         const [rows] = await connection.query(
           `SELECT COALESCE(MAX(CASE 
-              WHEN order_number LIKE 'VNT-%' THEN CAST(SUBSTRING(order_number, 5) AS UNSIGNED) 
+              WHEN order_number LIKE CONCAT('VNT-', ?, '-%') THEN CAST(SUBSTRING(order_number, ?+1) AS UNSIGNED)
+              WHEN order_number LIKE 'VNT-%' THEN CAST(SUBSTRING(order_number, 5) AS UNSIGNED)
+              WHEN order_number LIKE 'SO-%' THEN CAST(SUBSTRING(order_number, 4) AS UNSIGNED)
               ELSE 0 
             END), 0) as maxNum
            FROM sales_orders`,
+          [currentYear, String(currentYear).length + 5],
         );
         const maxNum = rows[0]?.maxNum || 0;
-        const orderNumber = `VNT-${String(maxNum + 1).padStart(3, "0")}`;
+        const orderNumber = `VNT-${currentYear}-${String(maxNum + 1).padStart(3, "0")}`;
 
         // Insert sales order
         const [result] = await connection.query(
@@ -268,8 +272,16 @@ export default function salesOrdersRoutes(pool) {
       const { id } = req.params;
       const { status } = req.body;
 
-      const validStatuses = ["pendiente", "confirmada", "en_preparacion", "lista", "entregada", "cancelada", "completada"];
-      
+      const validStatuses = [
+        "pendiente",
+        "confirmada",
+        "en_preparacion",
+        "lista",
+        "entregada",
+        "cancelada",
+        "completada",
+      ];
+
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ error: "Estado inválido" });
       }
@@ -304,7 +316,7 @@ export default function salesOrdersRoutes(pool) {
           order.current_status !== "completada"
         ) {
           console.log(
-            `✅ Orden de venta ${id} marcada como ${status}. Procesando inventario...`
+            `✅ Orden de venta ${id} marcada como ${status}. Procesando inventario...`,
           );
 
           // Obtener los items de la orden
@@ -316,7 +328,7 @@ export default function salesOrdersRoutes(pool) {
           // Procesar cada item de la orden
           for (const item of items) {
             console.log(
-              `📦 Procesando producto ${item.product_id}: ${item.quantity} unidades`
+              `📦 Procesando producto ${item.product_id}: ${item.quantity} unidades`,
             );
 
             // Obtener inventario actual
@@ -325,7 +337,8 @@ export default function salesOrdersRoutes(pool) {
               [item.product_id],
             );
 
-            const currentInventory = inventories.length > 0 ? inventories[0] : null;
+            const currentInventory =
+              inventories.length > 0 ? inventories[0] : null;
             const previousQuantity = currentInventory
               ? currentInventory.quantity
               : 0;
@@ -338,7 +351,7 @@ export default function salesOrdersRoutes(pool) {
                 [item.product_id, newQuantity, "Almacén Principal"],
               );
               console.log(
-                `✅ Inventario creado para producto ${item.product_id} con cantidad ${newQuantity}`
+                `✅ Inventario creado para producto ${item.product_id} con cantidad ${newQuantity}`,
               );
             } else {
               await connection.query(
@@ -346,7 +359,7 @@ export default function salesOrdersRoutes(pool) {
                 [newQuantity, item.product_id],
               );
               console.log(
-                `✅ Inventario actualizado para producto ${item.product_id}: ${previousQuantity} -> ${newQuantity}`
+                `✅ Inventario actualizado para producto ${item.product_id}: ${previousQuantity} -> ${newQuantity}`,
               );
             }
 
@@ -357,12 +370,12 @@ export default function salesOrdersRoutes(pool) {
                 [newQuantity, item.product_id],
               );
               console.log(
-                `✅ stock_quantity en products actualizado a ${newQuantity}`
+                `✅ stock_quantity en products actualizado a ${newQuantity}`,
               );
             } catch (productsError) {
               console.warn(
                 `⚠️ Error actualizando products.stock_quantity:`,
-                productsError.message
+                productsError.message,
               );
             }
 
@@ -370,8 +383,8 @@ export default function salesOrdersRoutes(pool) {
             try {
               // Mapear el tipo de movimiento al ENUM correcto
               // La tabla inventory_movements define: ENUM('entrada', 'salida', 'ajuste', 'devolución')
-              const movementType = 'salida'; // Venta es una salida de inventario
-              
+              const movementType = "salida"; // Venta es una salida de inventario
+
               await connection.query(
                 `
                 INSERT INTO inventory_movements 
@@ -389,17 +402,25 @@ export default function salesOrdersRoutes(pool) {
                 ],
               );
               console.log(
-                `✅ Movimiento de inventario registrado en historial`
+                `✅ Movimiento de inventario registrado en historial`,
               );
             } catch (historyError) {
               // Ignorar si la tabla no existe o si el tipo de movimiento es inválido
               if (historyError.code === "ER_NO_SUCH_TABLE") {
                 console.warn(`⚠️ Tabla inventory_movements no existe`);
-              } else if (historyError.code === "WARN_DATA_TRUNCATED" || historyError.sqlState === "01000") {
-                console.warn(`⚠️ Tipo de movimiento no válido para inventory_movements (valores válidos: entrada, salida, ajuste, devolución)`);
+              } else if (
+                historyError.code === "WARN_DATA_TRUNCATED" ||
+                historyError.sqlState === "01000"
+              ) {
+                console.warn(
+                  `⚠️ Tipo de movimiento no válido para inventory_movements (valores válidos: entrada, salida, ajuste, devolución)`,
+                );
               } else {
                 // Solo relanzar si es un error crítico
-                console.warn(`⚠️ Error al registrar movimiento (no crítico):`, historyError.message);
+                console.warn(
+                  `⚠️ Error al registrar movimiento (no crítico):`,
+                  historyError.message,
+                );
               }
             }
           }
@@ -427,7 +448,9 @@ export default function salesOrdersRoutes(pool) {
         console.error("Error en rollback:", e);
       }
       console.error("Error al actualizar estado:", error);
-      res.status(500).json({ error: "Error al actualizar estado", details: error.message });
+      res
+        .status(500)
+        .json({ error: "Error al actualizar estado", details: error.message });
     } finally {
       await connection.release();
     }
@@ -456,40 +479,44 @@ export default function salesOrdersRoutes(pool) {
         itemId,
         quantity,
         unit_price,
-        total
+        total,
       });
 
       if (!quantity || quantity <= 0) {
-        return res.status(400).json({ error: "La cantidad debe ser mayor a 0" });
+        return res
+          .status(400)
+          .json({ error: "La cantidad debe ser mayor a 0" });
       }
 
       // Verificar que el item pertenece a la orden
       const [items] = await pool.query(
         `SELECT * FROM sales_order_items WHERE id = ? AND sales_order_id = ?`,
-        [itemId, id]
+        [itemId, id],
       );
 
       console.log("📦 Items encontrados:", items);
 
       if (!items || items.length === 0) {
-        return res.status(404).json({ error: "Item no encontrado en esta orden" });
+        return res
+          .status(404)
+          .json({ error: "Item no encontrado en esta orden" });
       }
 
-      const finalTotal = total || (quantity * unit_price);
+      const finalTotal = total || quantity * unit_price;
 
       console.log("💾 Ejecutando UPDATE:", {
         quantity,
         unit_price: unit_price || items[0].unit_price,
         finalTotal,
         itemId,
-        orderId: id
+        orderId: id,
       });
 
       const updateResult = await pool.query(
         `UPDATE sales_order_items 
          SET quantity = ?, unit_price = ?, total = ?
          WHERE id = ? AND sales_order_id = ?`,
-        [quantity, unit_price || items[0].unit_price, finalTotal, itemId, id]
+        [quantity, unit_price || items[0].unit_price, finalTotal, itemId, id],
       );
 
       console.log("✅ UPDATE resultado:", updateResult);
@@ -497,7 +524,7 @@ export default function salesOrdersRoutes(pool) {
       // Actualizar el total de la orden
       const [totals] = await pool.query(
         `SELECT SUM(total) as order_total FROM sales_order_items WHERE sales_order_id = ?`,
-        [id]
+        [id],
       );
 
       const newOrderTotal = totals[0]?.order_total || 0;
@@ -506,7 +533,7 @@ export default function salesOrdersRoutes(pool) {
 
       await pool.query(
         `UPDATE sales_orders SET total_amount = ?, updated_at = NOW() WHERE id = ?`,
-        [newOrderTotal, id]
+        [newOrderTotal, id],
       );
 
       res.json({
@@ -514,11 +541,13 @@ export default function salesOrdersRoutes(pool) {
         itemId,
         quantity,
         total: finalTotal,
-        orderTotal: newOrderTotal
+        orderTotal: newOrderTotal,
       });
     } catch (error) {
       console.error("Error al actualizar item:", error);
-      res.status(500).json({ error: "Error al actualizar item", details: error.message });
+      res
+        .status(500)
+        .json({ error: "Error al actualizar item", details: error.message });
     }
   });
 
@@ -530,38 +559,42 @@ export default function salesOrdersRoutes(pool) {
       // Verificar que el item pertenece a la orden
       const [items] = await pool.query(
         `SELECT * FROM sales_order_items WHERE id = ? AND sales_order_id = ?`,
-        [itemId, id]
+        [itemId, id],
       );
 
       if (!items || items.length === 0) {
-        return res.status(404).json({ error: "Item no encontrado en esta orden" });
+        return res
+          .status(404)
+          .json({ error: "Item no encontrado en esta orden" });
       }
 
       await pool.query(
         `DELETE FROM sales_order_items WHERE id = ? AND sales_order_id = ?`,
-        [itemId, id]
+        [itemId, id],
       );
 
       // Actualizar el total de la orden
       const [totals] = await pool.query(
         `SELECT SUM(total) as order_total FROM sales_order_items WHERE sales_order_id = ?`,
-        [id]
+        [id],
       );
 
       const newOrderTotal = totals[0]?.order_total || 0;
 
       await pool.query(
         `UPDATE sales_orders SET total_amount = ?, updated_at = NOW() WHERE id = ?`,
-        [newOrderTotal, id]
+        [newOrderTotal, id],
       );
 
       res.json({
         message: "Item eliminado exitosamente",
-        orderTotal: newOrderTotal
+        orderTotal: newOrderTotal,
       });
     } catch (error) {
       console.error("Error al eliminar item:", error);
-      res.status(500).json({ error: "Error al eliminar item", details: error.message });
+      res
+        .status(500)
+        .json({ error: "Error al eliminar item", details: error.message });
     }
   });
 
@@ -572,35 +605,41 @@ export default function salesOrdersRoutes(pool) {
       const { quantity_required, unit } = req.body;
 
       if (!quantity_required || quantity_required <= 0) {
-        return res.status(400).json({ error: "La cantidad debe ser mayor a 0" });
+        return res
+          .status(400)
+          .json({ error: "La cantidad debe ser mayor a 0" });
       }
 
       // Verificar que el insumo pertenece a la orden
       const [insumos] = await pool.query(
         `SELECT * FROM sales_order_insumos WHERE id = ? AND sales_order_id = ?`,
-        [insumoId, id]
+        [insumoId, id],
       );
 
       if (!insumos || insumos.length === 0) {
-        return res.status(404).json({ error: "Insumo no encontrado en esta orden" });
+        return res
+          .status(404)
+          .json({ error: "Insumo no encontrado en esta orden" });
       }
 
       await pool.query(
         `UPDATE sales_order_insumos 
          SET quantity_required = ?, unit = ?, updated_at = NOW()
          WHERE id = ? AND sales_order_id = ?`,
-        [quantity_required, unit || insumos[0].unit, insumoId, id]
+        [quantity_required, unit || insumos[0].unit, insumoId, id],
       );
 
       res.json({
         message: "Insumo actualizado exitosamente",
         insumoId,
         quantity_required,
-        unit: unit || insumos[0].unit
+        unit: unit || insumos[0].unit,
       });
     } catch (error) {
       console.error("Error al actualizar insumo:", error);
-      res.status(500).json({ error: "Error al actualizar insumo", details: error.message });
+      res
+        .status(500)
+        .json({ error: "Error al actualizar insumo", details: error.message });
     }
   });
 

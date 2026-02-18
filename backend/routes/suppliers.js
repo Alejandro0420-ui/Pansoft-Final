@@ -3,6 +3,52 @@ import express from "express";
 export default function suppliersRoutes(pool) {
   const router = express.Router();
 
+  // ⚠️ RUTAS ESPECÍFICAS PRIMERO (antes de /:id)
+
+  // Toggle supplier status (deshabilitar/habilitar en lugar de eliminar)
+  router.patch("/:id/toggle-status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      console.log("🔄 PATCH toggle-status llamado para proveedor:", id);
+
+      // Obtener el estado actual
+      const [supplier] = await pool.query(
+        "SELECT is_active FROM suppliers WHERE id = ?",
+        [id],
+      );
+
+      if (supplier.length === 0) {
+        return res.status(404).json({ error: "Proveedor no encontrado" });
+      }
+
+      const newStatus = supplier[0].is_active ? 0 : 1;
+      console.log(
+        "📊 Estado actual:",
+        supplier[0].is_active,
+        "Nuevo estado:",
+        newStatus,
+      );
+
+      // Actualizar el estado
+      await pool.query("UPDATE suppliers SET is_active = ? WHERE id = ?", [
+        newStatus,
+        id,
+      ]);
+
+      console.log("✅ Proveedor actualizado - is_active:", newStatus);
+      res.json({
+        success: true,
+        message: newStatus ? "Proveedor habilitado" : "Proveedor deshabilitado",
+        is_active: newStatus,
+      });
+    } catch (error) {
+      console.error("❌ Error al cambiar estado del proveedor:", error);
+      res.status(500).json({ error: "Error al cambiar estado del proveedor" });
+    }
+  });
+
+  // ⚠️ RUTAS GENÉRICAS DESPUÉS (/:id las captura)
+
   // Get all suppliers
   router.get("/", async (req, res) => {
     try {
@@ -125,14 +171,36 @@ export default function suppliersRoutes(pool) {
     }
   });
 
-  // Delete supplier
+  // Toggle supplier status (deshabilitar/habilitar en lugar de eliminar)
+  // 🗑️ ELIMINADA - ya está arriba en rutas específicas
+
+  // Delete supplier (deprecado - usaremos toggle-status)
   router.delete("/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      await pool.query("DELETE FROM suppliers WHERE id = ?", [id]);
-      res.json({ success: true });
+      console.log("🗑️🗑️🗑️ ¡¡¡DELETE ENDPOINT LLAMADO!!! para proveedor:", id);
+
+      // En lugar de eliminar, deshabilitamos
+      const [current] = await pool.query(
+        "SELECT is_active, company_name FROM suppliers WHERE id = ?",
+        [id],
+      );
+
+      if (current.length === 0) {
+        return res.status(404).json({ error: "Proveedor no encontrado" });
+      }
+
+      console.log("   Estado anterior:", current[0].is_active);
+      await pool.query("UPDATE suppliers SET is_active = 0 WHERE id = ?", [id]);
+      console.log(
+        "   ✅ Proveedor:",
+        current[0].company_name,
+        "deshabilitado via DELETE",
+      );
+
+      res.json({ success: true, message: "Proveedor deshabilitado" });
     } catch (error) {
-      console.error("Error al eliminar proveedor:", error);
+      console.error("❌ Error en DELETE:", error.message);
       res.status(500).json({ error: "Error al eliminar proveedor" });
     }
   });

@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS suppliers (
   city VARCHAR(50),
   country VARCHAR(50),
   payment_terms VARCHAR(50),
+  category VARCHAR(100),
+  is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

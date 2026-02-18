@@ -7,6 +7,7 @@ import {
 export default function ordersRoutes(pool) {
   const router = express.Router();
 
+
   // Get all orders
   router.get("/", async (req, res) => {
     try {

@@ -5,7 +5,7 @@ export function Settings() {
   const [settings, setSettings] = useState({
     company_name: "Pansoft",
     email: "info@pansoft.com",
-    phone: "+57 (1) 2345-6789",
+    phone: "+57 3135445977",
     address: "Calle 123, Bogotá, Colombia",
     timezone: "America/Bogota",
     currency: "COP",

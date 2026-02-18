@@ -79,7 +79,7 @@ export function ProductionOrdersTab({
                           onClick={() => onViewSupplies(order)}
                           title="Ver insumos"
                         >
-                          📋
+                          Insumos
                         </button>
                         {order.status !== "completada" && (
                           <button
